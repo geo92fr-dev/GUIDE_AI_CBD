@@ -378,7 +378,7 @@
     
     <!-- Widget Implementations -->
     <script src="src/widgets/widget-base.js"></script>
-    <script src="src/widgets/bar-chart-widget.js"></script>
+    <script src="src/widgets/tile_info.js"></script>
     
     <!-- Unified System Integration -->
     <script src="src/migration/unified-system.js"></script>
@@ -401,7 +401,7 @@
                     const canvas = document.querySelector('dashboard-canvas-entity');
                     if (canvas && canvas.widgetManager) {
                         // Load bar chart unified widget
-                        await canvas.widgetManager.loadUnifiedWidget('src/widgets/bar-chart-widget-unified.js');
+                        await canvas.widgetManager.loadUnifiedWidget('src/widgets/widget_bar-chart_v1.0.js');
                         console.log('✅ Unified widgets loaded successfully');
                     }
                 } catch (error) {

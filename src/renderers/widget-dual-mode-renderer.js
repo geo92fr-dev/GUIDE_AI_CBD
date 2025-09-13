@@ -148,8 +148,8 @@ class WidgetDualModeRenderer {
             
             if (!widgetManager.widgetDefinitions.has(widgetType)) {
                 console.log('📦 DualModeRenderer: Loading unified widget for', widgetType);
-                // Essayer de charger le widget unifié
-                const unifiedPath = `src/widgets/${widgetType}-widget-unified.js`;
+                // Essayer de charger le widget unifié avec le nouveau pattern de nommage
+                const unifiedPath = `src/widgets/widget_${widgetType}_v1.0.js`;
                 await widgetManager.loadUnifiedWidget(unifiedPath);
             } else {
                 console.log('✅ DualModeRenderer: Widget definition already loaded for', widgetType);
