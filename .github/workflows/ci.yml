@@ -28,7 +28,7 @@ jobs:
           npm ci
 
       - name: Run unit tests (if configured)
-        if: steps.pkg.outputs.has_package == 'true' && contains(fromJson(needs.build.outputs || '[]'), '') == false
+        if: steps.pkg.outputs.has_package == 'true'
         run: |
           if npm run | grep -q "test"; then npm test --silent || exit 1; else echo "No test script defined"; fi
 

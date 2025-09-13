@@ -53,12 +53,12 @@ jobs:
               for (const p of mergedPRs) {
                 const filesRaw = await request(`/repos/${repo}/pulls/${p.number}/files?per_page=100`);
                 const files = JSON.parse(filesRaw || '[]');
-                const touched = files.some(f => f.filename === 'CBD_PROMPTS_EXAMPLES.md' || /prompts/i.test(f.filename));
+                const touched = files.some(f => f.filename === 'CBD/CBD_PROMPTS_EXAMPLES.md' || /prompts/i.test(f.filename));
                 if (touched) promptAddCount++;
               }
 
               const content = `# METRICS - Collaboration & Repo Metrics\n\n- Open tech-debt issues: ${openTechDebt}\n- PRs merged last 7 days: ${mergedCount}\n- New prompts changed last 7 days: ${promptAddCount}\n- Average time PR -> merge (days): ${avgDays}\n- Clarifications per prompt (weekly): n/a\n`;
-              fs.writeFileSync('CBD_METRICS.md', content);
+              fs.writeFileSync('CBD/CBD_METRICS.md', content);
             } catch (e) {
               console.error(e); process.exit(1);
             }
@@ -69,6 +69,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CBD_METRICS.md
-          git commit -m "chore(metrics): update CBD_METRICS.md [ci skip]" || echo "No changes to commit"
+          git add CBD/CBD_METRICS.md
+          git commit -m "chore(metrics): update CBD/CBD_METRICS.md [ci skip]" || echo "No changes to commit"
           git push origin HEAD:main

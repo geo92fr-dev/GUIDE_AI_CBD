@@ -1,7 +1,7 @@
 name: Apply Branch Protection
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   protect:
@@ -9,11 +9,11 @@ jobs:
     steps:
       - name: Apply branch protection using GitHub API
         env:
-          GH_TOKEN: ${{ secrets.ADMIN_GH_TOKEN }} # set a PAT with repo:admin scope if required
           REPO: ${{ github.repository }}
           BRANCH: main
         run: |
-          if [ -z "$GH_TOKEN" ]; then echo "Set ADMIN_GH_TOKEN secret with a PAT that can manage branch protection"; exit 1; fi
+          GH_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          if [ -z "$GH_TOKEN" ]; then echo "No token available: ensure GITHUB_TOKEN is set"; exit 1; fi
           curl -X PUT -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/$REPO/branches/$BRANCH/protection \
             -d '{
