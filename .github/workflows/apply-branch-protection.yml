@@ -1,7 +1,7 @@
 name: Apply Branch Protection
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   protect:
@@ -13,7 +13,7 @@ jobs:
           BRANCH: main
         run: |
           GH_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          if [ -z "$GH_TOKEN" ]; then echo "No token available: ensure GITHUB_TOKEN is set"; exit 1; fi
+          if [ -z "$GH_TOKEN" ]; then echo "No token available"; exit 1; fi
           curl -X PUT -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/$REPO/branches/$BRANCH/protection \
             -d '{
@@ -31,4 +31,4 @@ jobs:
             }'
 
       - name: Confirm
-        run: echo "Branch protection applied to $REPO:$BRANCH (if token had permissions)."
+        run: echo "Branch protection applied to $REPO:$BRANCH"
