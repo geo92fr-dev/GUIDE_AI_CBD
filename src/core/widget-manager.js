@@ -1,0 +1,588 @@
+/**
+ * WidgetManager - Management layer for WidgetEntity operations
+ * 
+ * Provides CRUD operations, validation, serialization, and lifecycle
+ * management for WidgetEntity instances.
+ */
+
+class WidgetManager {
+    constructor(repository = null) {
+        this.entities = new Map(); // In-memory storage
+        this.repository = repository; // External storage backend
+        this.listeners = new Map(); // Event listeners
+        this.entityRenderer = null; // Will be injected
+        
+        console.log('🏗️ WidgetManager: Initialized');
+    }
+    
+    /**
+     * Set entity renderer for rendering operations
+     */
+    setEntityRenderer(renderer) {
+        this.entityRenderer = renderer;
+        console.log('🎨 WidgetManager: Entity renderer attached');
+    }
+    
+    /**
+     * Set storage repository
+     */
+    setRepository(repository) {
+        this.repository = repository;
+        console.log('💾 WidgetManager: Repository attached:', repository.constructor.name);
+    }
+    
+    // === CRUD OPERATIONS ===
+    
+    /**
+     * Create a new widget entity
+     */
+    createWidget(type, config = {}) {
+        console.log('🆕 WidgetManager: Creating widget:', type, config);
+        
+        try {
+            const entity = new WidgetEntity({
+                type: type,
+                ...config
+            });
+            
+            // Validate entity
+            const validation = entity.validate();
+            if (!validation.isValid) {
+                throw new Error(`Invalid widget entity: ${validation.errors.join(', ')}`);
+            }
+            
+            // Store in memory
+            this.entities.set(entity.id, entity);
+            
+            // Persist if repository available
+            if (this.repository) {
+                this.repository.save(entity);
+            }
+            
+            console.log('✅ WidgetManager: Widget created:', entity.getSummary());
+            this.emit('widgetCreated', entity);
+            
+            return entity;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to create widget:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Get widget entity by ID
+     */
+    getWidget(id) {
+        const entity = this.entities.get(id);
+        if (entity) {
+            console.log('📋 WidgetManager: Widget retrieved:', entity.getSummary());
+        } else {
+            console.warn('⚠️ WidgetManager: Widget not found:', id);
+        }
+        return entity || null;
+    }
+    
+    /**
+     * Update widget entity
+     */
+    updateWidget(id, updates) {
+        console.log('🔄 WidgetManager: Updating widget:', id, updates);
+        
+        const entity = this.entities.get(id);
+        if (!entity) {
+            console.error('❌ WidgetManager: Widget not found for update:', id);
+            return false;
+        }
+        
+        try {
+            // Apply updates
+            if (updates.dataBinding) {
+                Object.assign(entity.dataBinding, updates.dataBinding);
+            }
+            if (updates.layout) {
+                Object.assign(entity.layout, updates.layout);
+            }
+            if (updates.rendering) {
+                Object.assign(entity.rendering, updates.rendering);
+            }
+            if (updates.state) {
+                Object.assign(entity.state, updates.state);
+            }
+            if (updates.metadata) {
+                Object.assign(entity.metadata, updates.metadata);
+            }
+            
+            // Update basic properties
+            if (updates.name) entity.name = updates.name;
+            if (updates.title) entity.title = updates.title;
+            
+            // Touch entity to update timestamp
+            entity.touch();
+            
+            // Validate after update
+            const validation = entity.validate();
+            if (!validation.isValid) {
+                throw new Error(`Invalid widget after update: ${validation.errors.join(', ')}`);
+            }
+            
+            // Persist if repository available
+            if (this.repository) {
+                this.repository.save(entity);
+            }
+            
+            console.log('✅ WidgetManager: Widget updated:', entity.getSummary());
+            this.emit('widgetUpdated', entity);
+            
+            return true;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to update widget:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Delete widget entity
+     */
+    deleteWidget(id) {
+        console.log('🗑️ WidgetManager: Deleting widget:', id);
+        
+        const entity = this.entities.get(id);
+        if (!entity) {
+            console.warn('⚠️ WidgetManager: Widget not found for deletion:', id);
+            return false;
+        }
+        
+        try {
+            // Remove from memory
+            this.entities.delete(id);
+            
+            // Remove from repository
+            if (this.repository) {
+                this.repository.delete(id);
+            }
+            
+            console.log('✅ WidgetManager: Widget deleted:', id);
+            this.emit('widgetDeleted', { id, entity });
+            
+            return true;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to delete widget:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Get all widget entities
+     */
+    getAllWidgets() {
+        const widgets = Array.from(this.entities.values());
+        console.log('📋 WidgetManager: Retrieved all widgets, count:', widgets.length);
+        return widgets;
+    }
+    
+    /**
+     * Get widgets filtered by criteria
+     */
+    getWidgets(filter = {}) {
+        const allWidgets = this.getAllWidgets();
+        
+        let filtered = allWidgets;
+        
+        if (filter.type) {
+            filtered = filtered.filter(w => w.type === filter.type);
+        }
+        
+        if (filter.hasData) {
+            filtered = filtered.filter(w => 
+                w.dataBinding.dimensions.length > 0 || 
+                w.dataBinding.measures.length > 0
+            );
+        }
+        
+        if (filter.hasError !== undefined) {
+            filtered = filtered.filter(w => w.state.hasError === filter.hasError);
+        }
+        
+        if (filter.isVisible !== undefined) {
+            filtered = filtered.filter(w => w.state.isVisible === filter.isVisible);
+        }
+        
+        console.log('🔍 WidgetManager: Filtered widgets:', filtered.length, 'of', allWidgets.length);
+        return filtered;
+    }
+    
+    // === DATA BINDING OPERATIONS ===
+    
+    /**
+     * Apply data binding to widget
+     */
+    applyDataBinding(id, dataBinding) {
+        console.log('🔗 WidgetManager: Applying data binding:', id, dataBinding);
+        
+        const entity = this.entities.get(id);
+        if (!entity) {
+            console.error('❌ WidgetManager: Widget not found for data binding:', id);
+            return false;
+        }
+        
+        try {
+            // Validate data binding compatibility with widget type
+            const validation = this.validateDataBindingCompatibility(entity.type, dataBinding);
+            if (!validation.isValid) {
+                throw new Error(`Data binding incompatible: ${validation.errors.join(', ')}`);
+            }
+            
+            // Update entity data binding
+            entity.dataBinding = {
+                ...entity.dataBinding,
+                ...dataBinding,
+                lastApplied: new Date().toISOString()
+            };
+            
+            // Apply data binding (clear loading/error states)
+            entity.applyDataBinding();
+            
+            // Persist
+            if (this.repository) {
+                this.repository.save(entity);
+            }
+            
+            console.log('✅ WidgetManager: Data binding applied:', entity.getSummary());
+            this.emit('dataBindingApplied', { entity, dataBinding });
+            
+            return true;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to apply data binding:', error);
+            entity.setError(error.message);
+            return false;
+        }
+    }
+    
+    /**
+     * Validate data binding compatibility with widget type
+     */
+    validateDataBindingCompatibility(widgetType, dataBinding) {
+        const errors = [];
+        
+        const requirements = {
+            'bar-chart': { minDimensions: 1, minMeasures: 1 },
+            'pie-chart': { minDimensions: 1, minMeasures: 1 },
+            'table': { minDimensions: 0, minMeasures: 1 },
+            'kpi': { minDimensions: 0, minMeasures: 1 }
+        };
+        
+        const req = requirements[widgetType] || requirements['bar-chart'];
+        
+        if (dataBinding.dimensions.length < req.minDimensions) {
+            errors.push(`${widgetType} requires at least ${req.minDimensions} dimension(s)`);
+        }
+        
+        if (dataBinding.measures.length < req.minMeasures) {
+            errors.push(`${widgetType} requires at least ${req.minMeasures} measure(s)`);
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
+    
+    // === SERIALIZATION OPERATIONS ===
+    
+    /**
+     * Serialize widget entity to JSON string
+     */
+    serializeWidget(id) {
+        const entity = this.entities.get(id);
+        if (!entity) {
+            throw new Error(`Widget not found for serialization: ${id}`);
+        }
+        
+        console.log('💾 WidgetManager: Serializing widget:', id);
+        return entity.serialize();
+    }
+    
+    /**
+     * Deserialize widget entity from JSON string
+     */
+    deserializeWidget(jsonString) {
+        console.log('📥 WidgetManager: Deserializing widget entity');
+        
+        try {
+            const entity = WidgetEntity.deserialize(jsonString);
+            
+            // Store in memory
+            this.entities.set(entity.id, entity);
+            
+            // Persist if repository available
+            if (this.repository) {
+                this.repository.save(entity);
+            }
+            
+            console.log('✅ WidgetManager: Widget deserialized:', entity.getSummary());
+            this.emit('widgetDeserialized', entity);
+            
+            return entity;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to deserialize widget:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Export widget as complete package
+     */
+    exportWidget(id) {
+        const entity = this.entities.get(id);
+        if (!entity) {
+            throw new Error(`Widget not found for export: ${id}`);
+        }
+        
+        console.log('📦 WidgetManager: Exporting widget package:', id);
+        
+        const widgetPackage = {
+            entity: entity,
+            dependencies: this.getWidgetDependencies(entity),
+            assets: this.getWidgetAssets(entity),
+            documentation: this.getWidgetDocumentation(entity),
+            examples: this.getWidgetExamples(entity),
+            exportDate: new Date().toISOString(),
+            version: '1.0.0'
+        };
+        
+        return widgetPackage;
+    }
+    
+    /**
+     * Import widget from package
+     */
+    importWidget(widgetPackage) {
+        console.log('📥 WidgetManager: Importing widget package');
+        
+        try {
+            // Validate package structure
+            if (!widgetPackage.entity) {
+                throw new Error('Invalid widget package: missing entity');
+            }
+            
+            // Create entity from package
+            const entity = new WidgetEntity(widgetPackage.entity);
+            
+            // Generate new ID to avoid conflicts
+            entity.id = entity.generateUniqueId();
+            entity.metadata.created = new Date().toISOString();
+            
+            // Store entity
+            this.entities.set(entity.id, entity);
+            
+            // Persist if repository available
+            if (this.repository) {
+                this.repository.save(entity);
+            }
+            
+            console.log('✅ WidgetManager: Widget imported:', entity.getSummary());
+            this.emit('widgetImported', { entity, package: widgetPackage });
+            
+            return entity;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to import widget:', error);
+            throw error;
+        }
+    }
+    
+    // === RENDERING OPERATIONS ===
+    
+    /**
+     * Render widget to DOM container
+     */
+    async renderWidget(id, container) {
+        const entity = this.entities.get(id);
+        if (!entity) {
+            console.error('❌ WidgetManager: Widget not found for rendering:', id);
+            return false;
+        }
+        
+        if (!this.entityRenderer) {
+            console.error('❌ WidgetManager: No entity renderer available');
+            return false;
+        }
+        
+        console.log('🎨 WidgetManager: Rendering widget:', id);
+        
+        try {
+            const startTime = performance.now();
+            
+            // Set loading state
+            entity.setLoading(true);
+            
+            // Render using entity renderer
+            const success = await this.entityRenderer.render(entity, container);
+            
+            if (success) {
+                // Track performance
+                const renderTime = performance.now() - startTime;
+                entity.trackRenderTime(renderTime);
+                entity.setLoading(false);
+                
+                console.log(`✅ WidgetManager: Widget rendered in ${renderTime.toFixed(2)}ms:`, id);
+                this.emit('widgetRendered', { entity, renderTime });
+            } else {
+                entity.setError('Rendering failed');
+                console.error('❌ WidgetManager: Widget rendering failed:', id);
+            }
+            
+            return success;
+        } catch (error) {
+            entity.setError(error.message);
+            console.error('❌ WidgetManager: Widget rendering error:', error);
+            return false;
+        }
+    }
+    
+    // === UTILITY METHODS ===
+    
+    /**
+     * Get widget dependencies (placeholder)
+     */
+    getWidgetDependencies(entity) {
+        // TODO: Implement dependency detection
+        return [];
+    }
+    
+    /**
+     * Get widget assets (placeholder)
+     */
+    getWidgetAssets(entity) {
+        // TODO: Implement asset collection
+        return [];
+    }
+    
+    /**
+     * Get widget documentation (placeholder)
+     */
+    getWidgetDocumentation(entity) {
+        return `Documentation for ${entity.name} (${entity.type})`;
+    }
+    
+    /**
+     * Get widget examples (placeholder)
+     */
+    getWidgetExamples(entity) {
+        // TODO: Implement example generation
+        return [];
+    }
+    
+    // === EVENT SYSTEM ===
+    
+    /**
+     * Add event listener
+     */
+    on(event, callback) {
+        if (!this.listeners.has(event)) {
+            this.listeners.set(event, []);
+        }
+        this.listeners.get(event).push(callback);
+    }
+    
+    /**
+     * Remove event listener
+     */
+    off(event, callback) {
+        if (this.listeners.has(event)) {
+            const callbacks = this.listeners.get(event);
+            const index = callbacks.indexOf(callback);
+            if (index > -1) {
+                callbacks.splice(index, 1);
+            }
+        }
+    }
+    
+    /**
+     * Emit event
+     */
+    emit(event, data) {
+        if (this.listeners.has(event)) {
+            this.listeners.get(event).forEach(callback => {
+                try {
+                    callback(data);
+                } catch (error) {
+                    console.error('❌ WidgetManager: Event listener error:', error);
+                }
+            });
+        }
+    }
+    
+    // === BULK OPERATIONS ===
+    
+    /**
+     * Clear all widgets
+     */
+    clear() {
+        console.log('🗑️ WidgetManager: Clearing all widgets');
+        
+        const count = this.entities.size;
+        this.entities.clear();
+        
+        if (this.repository) {
+            this.repository.clear();
+        }
+        
+        console.log(`✅ WidgetManager: Cleared ${count} widgets`);
+        this.emit('allWidgetsCleared', { count });
+    }
+    
+    /**
+     * Load widgets from repository
+     */
+    async loadFromRepository() {
+        if (!this.repository) {
+            console.warn('⚠️ WidgetManager: No repository available for loading');
+            return [];
+        }
+        
+        console.log('📥 WidgetManager: Loading widgets from repository');
+        
+        try {
+            const entities = await this.repository.loadAll();
+            
+            // Store in memory
+            entities.forEach(entity => {
+                this.entities.set(entity.id, entity);
+            });
+            
+            console.log(`✅ WidgetManager: Loaded ${entities.length} widgets from repository`);
+            this.emit('widgetsLoaded', entities);
+            
+            return entities;
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to load widgets from repository:', error);
+            return [];
+        }
+    }
+    
+    /**
+     * Get manager statistics
+     */
+    getStats() {
+        const widgets = this.getAllWidgets();
+        
+        return {
+            totalWidgets: widgets.length,
+            widgetTypes: [...new Set(widgets.map(w => w.type))],
+            widgetsWithData: widgets.filter(w => 
+                w.dataBinding.dimensions.length > 0 || 
+                w.dataBinding.measures.length > 0
+            ).length,
+            widgetsWithErrors: widgets.filter(w => w.state.hasError).length,
+            loadingWidgets: widgets.filter(w => w.state.isLoading).length,
+            dirtyWidgets: widgets.filter(w => w.state.isDirty).length
+        };
+    }
+}
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = WidgetManager;
+} else if (typeof window !== 'undefined') {
+    window.WidgetManager = WidgetManager;
+}

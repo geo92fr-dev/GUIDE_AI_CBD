@@ -650,6 +650,17 @@ class FeedingPanel extends HTMLElement {
             this.handleWidgetEdit(e.detail);
         });
 
+        // Listen for entity events from canvas to update widget list
+        document.addEventListener('entityAdded', (e) => {
+            console.log('📡 Feeding Panel: Entity added, updating widget list');
+            this.updateAvailableWidgets();
+        });
+
+        document.addEventListener('entityRemoved', (e) => {
+            console.log('📡 Feeding Panel: Entity removed, updating widget list');
+            this.updateAvailableWidgets();
+        });
+
         // Widget selector change
         const widgetSelector = this.shadowRoot.querySelector('#widget-selector');
         if (widgetSelector) {
@@ -905,36 +916,49 @@ class FeedingPanel extends HTMLElement {
 
     // Handle widget edit request from canvas
     handleWidgetEdit(editData) {
-        const { widget, index, source } = editData;
+        console.log('⚙️ Feeding Panel: Handling widget edit for editData:', editData);
         
-        console.log('⚙️ Feeding Panel: Handling widget edit for:', widget.type, widget.id);
+        // Extract widgetId and entity from the event detail
+        const widgetId = editData.widgetId || editData.widget?.id;
+        const entity = editData.entity || editData.widget;
         
-        // Select the widget type
-        this.selectedWidget = widget.type;
-        const widgetSelector = this.shadowRoot.querySelector('#widget-selector');
-        if (widgetSelector) {
-            widgetSelector.value = widget.type;
+        if (!widgetId || !entity) {
+            console.error('❌ Feeding Panel: Invalid edit data:', editData);
+            return;
         }
         
-        // Load widget's current assignments
+        console.log('⚙️ Feeding Panel: Editing widget/entity:', entity.type, entity.id);
+        
+        // Update canvas widgets list first to ensure we have latest data
+        this.updateCanvasWidgets();
+        
+        // Select the widget by ID (not type!)
+        this.selectedWidget = widgetId;
+        const widgetSelector = this.shadowRoot.querySelector('#widget-selector');
+        if (widgetSelector) {
+            widgetSelector.value = widgetId;
+            console.log('⚙️ Feeding Panel: Widget selector set to:', widgetId);
+        }
+        
+        // Load entity's current dataBinding assignments
+        const dataBinding = entity.dataBinding || {};
         this.assignments = {
-            dimensions: [...(widget.dimensions || [])],
-            measures: [...(widget.measures || [])],
-            filters: [...(widget.filters || [])]
+            dimensions: [...(dataBinding.dimensions || [])],
+            measures: [...(dataBinding.measures || [])],
+            filters: [...(dataBinding.filters || [])]
         };
         
-        // Store reference to the widget being edited
+        // Store reference to the entity being edited
         this.editingWidget = {
-            id: widget.id,
-            index: index,
-            original: widget
+            id: entity.id,
+            original: entity
         };
         
         // Update the visual display
         this.render();
         
-        console.log('⚙️ Widget loaded for editing. Assignments:', this.assignments);
-        console.log('⚙️ Editing widget reference:', this.editingWidget);
+        console.log('⚙️ Feeding Panel: Entity loaded for editing. Assignments:', this.assignments);
+        console.log('⚙️ Feeding Panel: Editing entity reference:', this.editingWidget);
     }
 
     // Global event handler for cross-component communication
@@ -966,22 +990,22 @@ class FeedingPanel extends HTMLElement {
 
     updateCanvasWidgets() {
         // Récupérer tous les widgets du canvas
-        const canvas = document.querySelector('dashboard-canvas');
+        const canvas = document.querySelector('dashboard-canvas-entity');
         console.log('⚙️ Feeding Panel: Canvas found:', !!canvas);
         
-        if (canvas && canvas.getAllWidgets) {
-            const widgets = canvas.getAllWidgets();
-            console.log('⚙️ Feeding Panel: Raw widgets from canvas:', widgets);
-            console.log('⚙️ Feeding Panel: First widget detail:', widgets[0]);
+        if (canvas && canvas.getEntities) {
+            const entities = canvas.getEntities();
+            console.log('⚙️ Feeding Panel: Raw entities from canvas:', entities);
+            console.log('⚙️ Feeding Panel: First entity detail:', entities[0]);
             
-            this.canvasWidgets = widgets;
-            console.log('⚙️ Feeding Panel: Updated canvas widgets:', this.canvasWidgets);
-            console.log('⚙️ Feeding Panel: Widget IDs available:', this.canvasWidgets.map(w => w.id));
+            this.canvasWidgets = entities;
+            console.log('⚙️ Feeding Panel: Updated canvas entities:', this.canvasWidgets);
+            console.log('⚙️ Feeding Panel: Entity IDs available:', this.canvasWidgets.map(e => e.id));
             
-            // Auto-select first widget if none selected and widgets available
+            // Auto-select first entity if none selected and entities available
             if (!this.selectedWidget && this.canvasWidgets.length > 0) {
                 this.selectedWidget = this.canvasWidgets[0].id;
-                console.log('⚙️ Feeding Panel: Auto-selected first widget:', this.selectedWidget);
+                console.log('⚙️ Feeding Panel: Auto-selected first entity:', this.selectedWidget);
             }
             
             this.render();
@@ -989,8 +1013,8 @@ class FeedingPanel extends HTMLElement {
             // Force sync combo box value after render
             this.syncWidgetSelector();
         } else {
-            console.log('⚙️ Feeding Panel: Canvas not found or getAllWidgets method missing');
-            console.log('⚙️ Feeding Panel: Available elements:', Array.from(document.querySelectorAll('dashboard-canvas')));
+            console.log('⚙️ Feeding Panel: Canvas not found or getEntities method missing');
+            console.log('⚙️ Feeding Panel: Available elements:', Array.from(document.querySelectorAll('dashboard-canvas-entity')));
         }
     }
 
@@ -1002,6 +1026,13 @@ class FeedingPanel extends HTMLElement {
             console.log('⚙️ Feeding Panel: Synced combo box to:', this.selectedWidget);
             console.log('⚙️ Feeding Panel: Combo box current value:', widgetSelector.value);
         }
+    }
+
+    /**
+     * Update available widgets list (alias for updateCanvasWidgets)
+     */
+    updateAvailableWidgets() {
+        this.updateCanvasWidgets();
     }
 
     applyDataToWidget() {
@@ -1131,10 +1162,17 @@ class FeedingPanel extends HTMLElement {
     }
 
     sendDataToWidget(widgetId, dataConfig) {
-        // Méthode 1: Via dashboard-canvas
-        const canvas = document.querySelector('dashboard-canvas');
-        if (canvas && canvas.updateWidgetData) {
-            canvas.updateWidgetData(widgetId, dataConfig);
+        // Méthode 1: Via dashboard-canvas-entity
+        const canvas = document.querySelector('dashboard-canvas-entity');
+        if (canvas && canvas.updateEntityDataBinding) {
+            // Convert dataConfig to entity dataBinding format
+            const dataBinding = {
+                dimensions: dataConfig.dimensions || [],
+                measures: dataConfig.measures || [],
+                filters: dataConfig.filters || [],
+                lastApplied: new Date().toISOString()
+            };
+            canvas.updateEntityDataBinding(widgetId, dataBinding);
             return;
         }
 

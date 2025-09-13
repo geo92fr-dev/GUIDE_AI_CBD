@@ -458,14 +458,14 @@ window.WidgetPlatform = {
             console.log('⚙️ Feeding Panel connected to unified system');
         }
         
-        // Dashboard Canvas
-        const dashboardCanvas = document.querySelector('dashboard-canvas');
+        // Dashboard Canvas Entity
+        const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
         if (dashboardCanvas && !dashboardCanvas.initialized) {
             dashboardCanvas.initialized = true;
             
-            // Connect widget events
-            dashboardCanvas.addEventListener('widgetAdded', (e) => {
-                this.updateAllComponents('widgetAdded', e.detail);
+            // Connect entity events
+            dashboardCanvas.addEventListener('entityAdded', (e) => {
+                this.updateAllComponents('entityAdded', e.detail);
             });
             
             console.log('🎨 Dashboard Canvas connected to unified system');
@@ -490,7 +490,7 @@ window.WidgetPlatform = {
         const components = [
             'available-objects-panel',
             'feeding-panel',
-            'dashboard-canvas',
+            'dashboard-canvas-entity',
             'widget-library'
         ];
         
@@ -554,17 +554,17 @@ window.WidgetPlatform = {
     handleWidgetCreation(widgetConfig) {
         console.log('✨ Creating widget globally:', widgetConfig.type);
         
-        // Ajouter le widget au canvas
-        const dashboardCanvas = document.querySelector('dashboard-canvas');
-        if (dashboardCanvas && typeof dashboardCanvas.addWidget === 'function') {
-            const widget = dashboardCanvas.addWidget(widgetConfig);
+        // Ajouter l'entité au canvas
+        const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
+        if (dashboardCanvas && typeof dashboardCanvas.addEntity === 'function') {
+            const entity = dashboardCanvas.addEntity(widgetConfig);
             
-            // Si c'est un Bar Chart, créer le composant
+            // Si c'est un Bar Chart, créer le composant entity
             if (widgetConfig.type === 'bar-chart') {
-                this.createBarChartWidget(widget, widgetConfig);
+                this.createBarChartEntity(entity, widgetConfig);
             }
             
-            return widget;
+            return entity;
         }
         
         return null;

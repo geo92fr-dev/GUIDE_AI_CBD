@@ -80,9 +80,9 @@ class SimpleDragDrop {
         }
         
         // Vérifier si on survole le canvas
-        const canvas = e.target.closest('dashboard-canvas');
+        const canvas = e.target.closest('dashboard-canvas-entity');
         if (canvas) {
-            console.log('🟡 SimpleDragDrop: DRAGOVER on canvas');
+            console.log('🟡 SimpleDragDrop: DRAGOVER on entity canvas');
             e.preventDefault();
             e.stopPropagation();
             e.dataTransfer.dropEffect = 'copy';
@@ -101,9 +101,9 @@ class SimpleDragDrop {
         }
         
         // Vérifier si on drop sur le canvas
-        const canvas = e.target.closest('dashboard-canvas');
+        const canvas = e.target.closest('dashboard-canvas-entity');
         if (canvas) {
-            console.log('🟢 SimpleDragDrop: DROP on canvas');
+            console.log('🟢 SimpleDragDrop: DROP on entity canvas');
             e.preventDefault();
             e.stopPropagation();
             

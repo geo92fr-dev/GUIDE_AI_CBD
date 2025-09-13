@@ -308,8 +308,8 @@
                     <button class="btn-header" id="export-canvas" title="Export canvas">📤 Export</button>
                 </div>
             </div>
-            <!-- Dashboard Canvas Component will be loaded here -->
-            <dashboard-canvas></dashboard-canvas>
+            <!-- Dashboard Canvas Component - Entity System -->
+            <dashboard-canvas-entity></dashboard-canvas-entity>
         </main>
         
         <!-- RIGHT PANEL 1: Feeding Panel (WebI Data Assignment) -->
@@ -362,9 +362,12 @@
     <!-- Simple Drag Drop Bypass System -->
     <script src="src/core/simple-drag-drop.js"></script>
     
+    <!-- Entity System (Auto-loading) -->
+    <script src="src/entity-system-loader.js"></script>
+    
     <!-- Web Components -->
     <script src="src/components/widget-library.js"></script>
-    <script src="src/components/dashboard-canvas.js"></script>
+    <script src="src/components/dashboard-canvas-entity.js"></script>
     <script src="src/components/feeding-panel.js"></script>
     <script src="src/components/available-objects-panel.js"></script>
     
@@ -374,6 +377,9 @@
     
     <!-- Unified System Integration -->
     <script src="src/migration/unified-system.js"></script>
+    
+    <!-- Test Script for Canvas ↔ Feeding Panel Sync -->
+    <script src="test-canvas-feeding-sync.js"></script>
     
     <script>
         // Application Initialization with Unified System
@@ -410,14 +416,14 @@
             });
             
             document.getElementById('clear-widgets')?.addEventListener('click', () => {
-                const dashboardCanvas = document.querySelector('dashboard-canvas');
-                if (dashboardCanvas && typeof dashboardCanvas.clearAllWidgets === 'function') {
-                    dashboardCanvas.clearAllWidgets();
+                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
+                if (dashboardCanvas && typeof dashboardCanvas.clearCanvas === 'function') {
+                    dashboardCanvas.clearCanvas();
                 }
             });
             
             document.getElementById('export-canvas')?.addEventListener('click', () => {
-                const dashboardCanvas = document.querySelector('dashboard-canvas');
+                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
                 if (dashboardCanvas && typeof dashboardCanvas.exportCanvas === 'function') {
                     dashboardCanvas.exportCanvas();
                 }
