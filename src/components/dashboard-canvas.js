@@ -16,6 +16,7 @@ class DashboardCanvas extends HTMLElement {
         this.widgets = [];
         this.gridColumns = 12;
         this.gridGap = 16;
+        this.eventsInitialized = false;  // Track event binding
         
         this.init();
     }
@@ -26,6 +27,9 @@ class DashboardCanvas extends HTMLElement {
     }
 
     render() {
+        console.log('🎨 Canvas: render() called - Widget count:', this.widgets.length);
+        console.trace('🎨 Canvas: render() call stack');
+        
         const style = `
             <style>
                 :host {
@@ -41,6 +45,12 @@ class DashboardCanvas extends HTMLElement {
                     background: var(--background-secondary, #1A2733);
                     overflow: hidden;
                     color: var(--text-primary, #EAECEE);
+                    transition: all var(--transition-fast, 0.15s ease);
+                }
+                
+                .canvas-container.drag-over {
+                    background: var(--background-primary, #12171C);
+                    border: 2px dashed var(--business-blue, #1B90FF);
                 }
                 
                 .canvas-content {
@@ -113,6 +123,20 @@ class DashboardCanvas extends HTMLElement {
                 
                 .widget-type-icon {
                     font-size: 1.1em;
+                }
+
+                .widget-id-label {
+                    font-size: 0.8em;
+                    font-weight: 600;
+                    color: #00144A; /* Blue 11 - texte très foncé */
+                    background: #D1EFFF; /* Blue 2 - fond très clair */
+                    padding: 3px 8px;
+                    border-radius: 12px;
+                    margin-left: auto;
+                    font-family: monospace;
+                    opacity: 1;
+                    border: 1px solid #89D1FF; /* Blue 4 - bordure claire */
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
                 }
                 
                 .widget-actions {
@@ -216,6 +240,38 @@ class DashboardCanvas extends HTMLElement {
                     font-weight: 500;
                     flex-shrink: 0;
                 }
+
+                .drop-hint {
+                    margin-top: 24px;
+                    padding: 20px;
+                    border: 2px dashed var(--grey-6);
+                    border-radius: 12px;
+                    background: var(--grey-10);
+                    text-align: center;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    color: var(--grey-3);
+                    font-style: italic;
+                }
+
+                .drop-hint-icon {
+                    font-size: 24px;
+                    opacity: 0.7;
+                }
+
+                .canvas-container.drag-over .drop-hint {
+                    border-color: var(--blue-4);
+                    background: var(--blue-11);
+                    color: var(--blue-4);
+                }
+
+                .canvas-container.drag-over .drop-hint-icon {
+                    opacity: 1;
+                    transform: scale(1.1);
+                }
                 
                 .loading-widget {
                     display: flex;
@@ -270,6 +326,8 @@ class DashboardCanvas extends HTMLElement {
         `;
 
         this.shadowRoot.innerHTML = template;
+        
+        // Always bind events (global events only once, container events every time)
         this.bindEvents();
     }
 
@@ -299,20 +357,32 @@ class DashboardCanvas extends HTMLElement {
                     <div class="empty-steps">
                         <div class="empty-step">
                             <span class="step-number">1</span>
-                            <span>Load CSV data (📤 button)</span>
+                            <span>Select a dataset from Available Objects</span>
                         </div>
                         <div class="empty-step">
                             <span class="step-number">2</span>
-                            <span>Select a widget type</span>
+                            <span>🧩 Drag a widget from Widget Library to this canvas</span>
                         </div>
                         <div class="empty-step">
                             <span class="step-number">3</span>
-                            <span>Drag fields to configure</span>
+                            <span>📊 Drag fields to Data Assignment panel</span>
                         </div>
                         <div class="empty-step">
                             <span class="step-number">4</span>
-                            <span>Create your widget</span>
+                            <span>✨ Create your widget</span>
                         </div>
+                    </div>
+                    <div class="drop-hint">
+                        <div class="drop-hint-icon">🧩</div>
+                        <div>Drag widgets here to add them to your dashboard</div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button id="clear-canvas-btn" style="padding: 8px 16px; background: var(--red-5, #ff4757); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🗑️ Clear Canvas (Debug)
+                        </button>
+                        <span style="margin-left: 10px; color: var(--grey-3); font-size: 0.9em;">
+                            Current widgets: ${this.widgets.length}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -333,15 +403,16 @@ class DashboardCanvas extends HTMLElement {
                     <div class="widget-title">
                         <span class="widget-type-icon">${this.getWidgetIcon(widget.type)}</span>
                         <span>${widget.title || widget.type}</span>
+                        <span class="widget-id-label">#${widget.id.split('_').pop()}</span>
                     </div>
                     <div class="widget-actions">
-                        <button class="btn-widget" onclick="this.closest('dashboard-canvas').editWidget(${index})" title="Edit widget">
+                        <button class="btn-widget edit-btn" data-action="edit" data-index="${index}" title="Edit widget">
                             ⚙️
                         </button>
-                        <button class="btn-widget" onclick="this.closest('dashboard-canvas').duplicateWidget(${index})" title="Duplicate widget">
+                        <button class="btn-widget duplicate-btn" data-action="duplicate" data-index="${index}" title="Duplicate widget">
                             📋
                         </button>
-                        <button class="btn-widget danger" onclick="this.closest('dashboard-canvas').removeWidget(${index})" title="Remove widget">
+                        <button class="btn-widget danger remove-btn" data-action="remove" data-index="${index}" title="Remove widget">
                             🗑️
                         </button>
                     </div>
@@ -374,15 +445,47 @@ class DashboardCanvas extends HTMLElement {
         }
 
         // Widget content will be rendered by specific widget components
+        const hasData = widget.dataConfig && 
+                       (widget.dataConfig.dimensions?.length > 0 || 
+                        widget.dataConfig.measures?.length > 0 || 
+                        widget.dataConfig.filters?.length > 0);
+        
         return `
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
+            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-secondary);">
                 <div style="text-align: center;">
                     <div style="font-size: 2em; margin-bottom: 8px;">${this.getWidgetIcon(widget.type)}</div>
                     <div>${widget.type} Widget</div>
-                    <div style="font-size: 0.8em; margin-top: 4px;">
-                        ${widget.dimensions?.length || 0} dimensions, ${widget.measures?.length || 0} measures
-                    </div>
+                    ${hasData ? this.renderDataStatus(widget.dataConfig) : this.renderNoDataStatus()}
                 </div>
+            </div>
+        `;
+    }
+
+    renderDataStatus(dataConfig) {
+        const dimensionsCount = dataConfig.dimensions?.length || 0;
+        const measuresCount = dataConfig.measures?.length || 0;
+        const filtersCount = dataConfig.filters?.length || 0;
+        
+        return `
+            <div style="font-size: 0.8em; margin-top: 8px; color: var(--business-green, #28a745);">
+                ✅ Data Connected
+            </div>
+            <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.8;">
+                📊 ${dimensionsCount} dimensions • 📈 ${measuresCount} measures • 🔍 ${filtersCount} filters
+            </div>
+            <div style="font-size: 0.7em; margin-top: 4px; opacity: 0.6;">
+                Last updated: ${new Date(dataConfig.timestamp).toLocaleTimeString()}
+            </div>
+        `;
+    }
+
+    renderNoDataStatus() {
+        return `
+            <div style="font-size: 0.8em; margin-top: 8px; color: var(--text-tertiary, #999);">
+                No data assigned
+            </div>
+            <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.7;">
+                Use Data Assignment to connect data
             </div>
         `;
     }
@@ -398,14 +501,163 @@ class DashboardCanvas extends HTMLElement {
     }
 
     bindEvents() {
-        // Listen for widget creation events
-        document.addEventListener('createWidget', (e) => {
+        // Prevent multiple global event binding
+        if (this.eventsInitialized) {
+            console.log('🎨 Canvas: Global events already initialized, only binding container events...');
+            this.bindContainerEvents();
+            return;
+        }
+
+        console.log('🎨 Canvas: Initializing all events...');
+        // Prevent duplicate event listeners
+        if (this.eventsInitialized) {
+            console.log('🎨 Canvas: Events already initialized, skipping...');
+            return;
+        }
+
+        // Listen for widget creation events (global) - ONLY ONCE
+        this.createWidgetHandler = (e) => {
+            console.log('🎨 Canvas: Received createWidget event', e.detail);
+            console.log('🎨 Canvas: Current widgets count:', this.widgets.length);
             this.addWidget(e.detail);
+        };
+        document.addEventListener('createWidget', this.createWidgetHandler);
+
+        // Listen for widget update events - ONLY ONCE
+        this.updateWidgetHandler = (e) => {
+            console.log('🎨 Canvas: Received updateWidget event', e.detail);
+            this.updateWidget(e.detail.index, e.detail.widget);
+        };
+        document.addEventListener('updateWidget', this.updateWidgetHandler);
+
+        this.eventsInitialized = true;
+        
+        // Bind container events
+        this.bindContainerEvents();
+    }
+
+    bindContainerEvents() {
+        const container = this.shadowRoot.querySelector('.canvas-container');
+        if (!container) {
+            console.error('🎨 Canvas: No container found for binding events!');
+            return;
+        }
+
+        console.log('🎨 Canvas: Events DISABLED - using SimpleDragDrop bypass');
+        
+        // TOUS LES LISTENERS DÉSACTIVÉS - SimpleDragDrop s'en charge
+        console.log('🔧 Canvas: All native drag events disabled, SimpleDragDrop will handle everything');
+        
+        // Test simple - détection de tous les événements sur le canvas
+        container.addEventListener('mouseenter', () => {
+            console.log('🖱️ Canvas: Mouse entered - canvas is accessible');
         });
+
+        container.addEventListener('click', () => {
+            console.log('🖱️ Canvas: CLICKED - canvas responds to events');
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            container.classList.remove('drag-over');
+            
+            console.log('🎨 Canvas: Drop event detected');
+
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                console.log('🎨 Canvas: Drop data parsed:', data);
+                
+                if (data.type === 'widget') {
+                    this.handleWidgetDrop(data, e);
+                } else {
+                    console.warn('🎨 Canvas: Unknown drop data type:', data.type);
+                }
+            } catch (error) {
+                console.error('🎨 Canvas: Error parsing drop data:', error);
+            }
+        });
+
+        // Debug button (temporary)
+        const clearBtn = this.shadowRoot.querySelector('#clear-canvas-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                this.clearWidgets();
+            });
+        }
+
+        // Widget action buttons
+        container.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-action]');
+            if (!button) return;
+
+            // Stop event propagation to prevent interference with drag & drop
+            e.stopPropagation();
+
+            const action = button.dataset.action;
+            const index = parseInt(button.dataset.index);
+
+            console.log(`🎨 Canvas: ${action} button clicked for widget index ${index}`);
+
+            switch (action) {
+                case 'edit':
+                    this.editWidget(index);
+                    break;
+                case 'duplicate':
+                    this.duplicateWidget(index);
+                    break;
+                case 'remove':
+                    this.removeWidget(index);
+                    break;
+            }
+        });
+    }
+
+    handleWidgetDrop(widgetData, dropEvent) {
+        console.log('🎨 Canvas: Widget dropped:', widgetData.name);
+        console.log('🎨 Canvas: Current widgets count before drop:', this.widgets.length);
+
+        // Create widget configuration
+        const uniqueId = 'widget_drop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const widgetConfig = {
+            id: uniqueId,
+            type: widgetData.id,
+            title: widgetData.name,
+            dimensions: [],
+            measures: [],
+            filters: [],
+            size: widgetData.size || { width: 4, height: 3 }, // Use widget's default size
+            created: new Date().toISOString(),
+            loading: false,
+            error: null,
+            source: 'drag-drop'  // Mark as drag & drop source
+        };
+
+        console.log('🎨 Canvas: About to call addWidget with:', widgetConfig.id);
+        console.log('🎨 Canvas: Widget size will be:', widgetConfig.size);
+
+        // Add widget directly (no event dispatching to avoid loop)
+        const addedWidget = this.addWidget(widgetConfig);
+
+        console.log('🎨 Canvas: Widget creation completed. Final count:', this.widgets.length);
+        console.log('✅ Widget created on canvas via drag & drop:', widgetConfig.title);
+        
+        return addedWidget;
     }
 
     // Public API methods
     addWidget(widgetConfig) {
+        console.log('🎨 Canvas: addWidget called with:', widgetConfig);
+        console.log('🎨 Canvas: Current widgets before add:', this.widgets.length);
+        console.log('🎨 Canvas: Existing widgets:', this.widgets.map(w => ({id: w.id, type: w.type, title: w.title})));
+        console.log('🎨 Canvas: Widget source:', widgetConfig.source || 'unknown');
+        
+        // Vérifier si un widget avec le même ID existe déjà
+        if (widgetConfig.id && this.widgets.find(w => w.id === widgetConfig.id)) {
+            console.warn('🎨 Canvas: Widget with ID already exists, skipping:', widgetConfig.id);
+            return this.widgets.find(w => w.id === widgetConfig.id);
+        }
+        
         const widget = {
             id: widgetConfig.id || 'widget_' + Date.now(),
             type: widgetConfig.type,
@@ -420,6 +672,7 @@ class DashboardCanvas extends HTMLElement {
         };
 
         this.widgets.push(widget);
+        console.log('🎨 Canvas: Widget added, new count:', this.widgets.length);
         this.render();
 
         // Dispatch event for other components
@@ -431,6 +684,38 @@ class DashboardCanvas extends HTMLElement {
 
         console.log('🎨 Widget added to canvas:', widget.type);
         return widget;
+    }
+
+    updateWidget(index, updatedWidget) {
+        if (index < 0 || index >= this.widgets.length) {
+            console.error('🎨 Canvas: Invalid widget index for update:', index);
+            return;
+        }
+
+        console.log('🎨 Canvas: Updating widget at index', index, 'with:', updatedWidget);
+
+        // Update the widget in the array
+        this.widgets[index] = {
+            ...this.widgets[index],
+            ...updatedWidget,
+            updated: new Date().toISOString()
+        };
+
+        // Re-render to show changes
+        this.render();
+
+        // Dispatch event for other components
+        this.dispatchEvent(new CustomEvent('widgetUpdated', {
+            detail: {
+                index: index,
+                widget: this.widgets[index]
+            },
+            bubbles: true,
+            composed: true
+        }));
+
+        console.log('💾 Widget updated on canvas:', this.widgets[index].type, this.widgets[index].id);
+        return this.widgets[index];
     }
 
     removeWidget(index) {
@@ -454,13 +739,27 @@ class DashboardCanvas extends HTMLElement {
 
         const widget = this.widgets[index];
         
-        this.dispatchEvent(new CustomEvent('editWidget', {
-            detail: widget,
+        // Prepare widget data for editing
+        const editData = {
+            widget: widget,
+            index: index,
+            action: 'edit',
+            source: 'canvas'
+        };
+        
+        console.log('⚙️ Editing widget:', widget.type, 'with data:', editData);
+        
+        // Dispatch event to feeding panel
+        document.dispatchEvent(new CustomEvent('editWidget', {
+            detail: editData
+        }));
+        
+        // Also dispatch local event for other components
+        this.dispatchEvent(new CustomEvent('widgetEditRequested', {
+            detail: editData,
             bubbles: true,
             composed: true
         }));
-
-        console.log('⚙️ Editing widget:', widget.type);
     }
 
     duplicateWidget(index) {
@@ -536,17 +835,85 @@ class DashboardCanvas extends HTMLElement {
         return this.widgets.length;
     }
 
+    // Clear all widgets (for testing/debugging)
+    clearWidgets() {
+        console.log('🗑️ Canvas: Clearing all widgets (count was:', this.widgets.length + ')');
+        this.widgets = [];
+        this.render();
+    }
+
     // Global event handler
     handleGlobalEvent(eventType, data) {
         switch (eventType) {
             case 'dataSourceChanged':
-                // Could refresh widgets when data changes
-                this.widgets.forEach(widget => {
-                    widget.loading = true;
-                });
-                this.render();
+                // IMPORTANT: Ne PAS affecter les widgets lors du changement de dataset
+                // Les widgets doivent préserver leurs données jusqu'au prochain Apply
+                console.log('🎨 Canvas: DataSource changed, but widgets data is PROTECTED');
+                console.log('🎨 Canvas: Widgets will keep their current state until next Apply');
+                // Ne pas mettre loading: true, ne pas re-render
                 break;
         }
+    }
+
+    // Cleanup method
+    disconnectedCallback() {
+        if (this.eventsInitialized) {
+            if (this.createWidgetHandler) {
+                document.removeEventListener('createWidget', this.createWidgetHandler);
+            }
+            if (this.updateWidgetHandler) {
+                document.removeEventListener('updateWidget', this.updateWidgetHandler);
+            }
+            console.log('🎨 Canvas: Event listeners cleaned up');
+        }
+    }
+
+    // API pour récupérer tous les widgets du canvas
+    getAllWidgets() {
+        return this.widgets.map(widget => ({
+            id: widget.id,
+            type: widget.type,
+            name: widget.title || widget.type,
+            title: widget.title,
+            config: widget.config || {}
+        }));
+    }
+
+    // API pour mettre à jour les données d'un widget spécifique
+    updateWidgetData(widgetId, dataConfig) {
+        console.log('🎨 Canvas: Updating widget data for:', widgetId, dataConfig);
+        
+        const widget = this.widgets.find(w => w.id === widgetId);
+        if (!widget) {
+            console.warn('🎨 Canvas: Widget not found:', widgetId);
+            return false;
+        }
+
+        // Mettre à jour les données du widget et l'état de loading
+        widget.dataConfig = dataConfig;
+        widget.lastUpdated = new Date().toISOString();
+        widget.loading = false; // Important: sortir de l'état loading
+        widget.error = null;   // Clear any previous errors
+        
+        console.log('🎨 Canvas: Widget data updated:', widget);
+        console.log('🎨 Canvas: Widget loading state set to:', widget.loading);
+        console.log('🔒 Canvas: Widget data is PROTECTED from dataset changes - only Apply button updates it');
+        
+        // Déclencher le re-rendu du widget
+        this.render();
+        
+        // Notifier le widget spécifique s'il a une méthode de mise à jour
+        const widgetElement = this.shadowRoot.querySelector(`[data-widget-id="${widgetId}"]`);
+        if (widgetElement && widgetElement.updateData) {
+            widgetElement.updateData(dataConfig);
+        }
+        
+        // Événement global pour notifier la mise à jour
+        document.dispatchEvent(new CustomEvent('widgetDataUpdated', {
+            detail: { widgetId, dataConfig, widget }
+        }));
+        
+        return true;
     }
 }
 

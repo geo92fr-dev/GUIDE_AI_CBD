@@ -21,6 +21,7 @@ class WidgetLibrary extends HTMLElement {
                 icon: '📊',
                 description: 'Compare values across categories',
                 requirements: { dimensions: 1, measures: 1 },
+                size: { width: 6, height: 4 }, // Taille recommandée pour les graphiques
                 status: 'available'
             },
             {
@@ -29,6 +30,7 @@ class WidgetLibrary extends HTMLElement {
                 icon: '📈',
                 description: 'Show trends over time',
                 requirements: { dimensions: 1, measures: 1 },
+                size: { width: 8, height: 4 }, // Plus large pour les tendances temporelles
                 status: 'coming-soon'
             },
             {
@@ -37,6 +39,7 @@ class WidgetLibrary extends HTMLElement {
                 icon: '🥧',
                 description: 'Display proportions',
                 requirements: { dimensions: 1, measures: 1 },
+                size: { width: 4, height: 4 }, // Format carré pour les camemberts
                 status: 'coming-soon'
             },
             {
@@ -45,6 +48,7 @@ class WidgetLibrary extends HTMLElement {
                 icon: '📋',
                 description: 'Detailed data view',
                 requirements: { dimensions: 0, measures: 0 },
+                size: { width: 12, height: 6 }, // Pleine largeur pour les tableaux
                 status: 'coming-soon'
             }
         ];
@@ -136,6 +140,20 @@ class WidgetLibrary extends HTMLElement {
                     border-color: var(--border-light, #1A2733);
                 }
                 
+                .widget-item[draggable="true"] {
+                    cursor: grab;
+                }
+                
+                .widget-item.dragging {
+                    opacity: 0.5;
+                    transform: rotate(2deg);
+                    z-index: 1000;
+                }
+                
+                .widget-item:active {
+                    cursor: grabbing;
+                }
+                
                 .widget-header {
                     display: flex;
                     align-items: center;
@@ -219,6 +237,34 @@ class WidgetLibrary extends HTMLElement {
                     opacity: 1;
                 }
                 
+                .widget-actions {
+                    margin-top: var(--spacing-sm, 8px);
+                    padding-top: var(--spacing-sm, 8px);
+                    border-top: 1px solid var(--border-light, #2A3F5A);
+                }
+                
+                .add-widget-btn {
+                    width: 100%;
+                    padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+                    background: var(--business-blue, #1B90FF);
+                    color: white;
+                    border: none;
+                    border-radius: var(--radius-sm, 4px);
+                    font-size: 0.8em;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all var(--transition-fast, 0.15s ease);
+                }
+                
+                .add-widget-btn:hover {
+                    background: var(--business-blue-dark, #1570CC);
+                    transform: translateY(-1px);
+                }
+                
+                .add-widget-btn:active {
+                    transform: translateY(0);
+                }
+                
                 .library-footer {
                     padding: var(--spacing-md, 16px);
                     background: var(--background-secondary, #1A2733);
@@ -286,7 +332,12 @@ class WidgetLibrary extends HTMLElement {
         return `
             <div class="widget-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}"
                  data-widget-id="${widget.id}"
-                 data-widget-name="${widget.name}">
+                 data-widget-name="${widget.name}"
+                 data-widget-icon="${widget.icon}"
+                 data-widget-description="${widget.description}"
+                 data-widget-requirements='${JSON.stringify(widget.requirements)}'
+                 data-widget-size='${JSON.stringify(widget.size)}'
+                 ${!isDisabled ? 'draggable="true"' : ''}>
                 
                 <div class="widget-header">
                     <span class="widget-icon">${widget.icon}</span>
@@ -307,6 +358,10 @@ class WidgetLibrary extends HTMLElement {
                     </span>
                 </div>
                 
+                <div class="widget-actions">
+                    ${!isDisabled ? `<button class="add-widget-btn" data-widget-id="${widget.id}">➕ Add to Canvas</button>` : ''}
+                </div>
+                
                 <div class="selection-indicator">✓</div>
             </div>
         `;
@@ -325,6 +380,18 @@ class WidgetLibrary extends HTMLElement {
         if (!container) return;
 
         container.addEventListener('click', (e) => {
+            // Handle "Add to Canvas" button clicks
+            if (e.target.classList.contains('add-widget-btn')) {
+                const widgetId = e.target.dataset.widgetId;
+                const widgetItem = e.target.closest('.widget-item');
+                
+                if (widgetItem && !widgetItem.classList.contains('disabled')) {
+                    this.addWidgetToCanvas(widgetItem);
+                }
+                return;
+            }
+            
+            // Handle widget selection
             const widgetItem = e.target.closest('.widget-item');
             if (!widgetItem || widgetItem.classList.contains('disabled')) return;
 
@@ -332,6 +399,41 @@ class WidgetLibrary extends HTMLElement {
             const widgetName = widgetItem.dataset.widgetName;
             
             this.selectWidget(widgetId, widgetName);
+        });
+
+        // Drag & Drop handlers avec logs détaillés
+        container.addEventListener('dragstart', (e) => {
+            const widgetItem = e.target.closest('.widget-item');
+            if (!widgetItem || widgetItem.classList.contains('disabled')) {
+                console.log('🧩 Widget Library: Drag blocked - no widget item or disabled');
+                return;
+            }
+
+            const widgetData = {
+                id: widgetItem.dataset.widgetId,
+                name: widgetItem.dataset.widgetName,
+                icon: widgetItem.dataset.widgetIcon,
+                description: widgetItem.dataset.widgetDescription,
+                requirements: JSON.parse(widgetItem.dataset.widgetRequirements || '{}'),
+                size: JSON.parse(widgetItem.dataset.widgetSize || '{"width": 4, "height": 3}'),
+                type: 'widget'
+            };
+
+            console.log('🧩 Widget Library: DRAGSTART - Setting data:', widgetData);
+            e.dataTransfer.setData('application/json', JSON.stringify(widgetData));
+            e.dataTransfer.effectAllowed = 'copy';
+
+            // Visual feedback
+            widgetItem.classList.add('dragging');
+
+            console.log('🧩 Widget drag started:', widgetData.name, 'EffectAllowed:', e.dataTransfer.effectAllowed);
+        });
+
+        container.addEventListener('dragend', (e) => {
+            const widgetItem = e.target.closest('.widget-item');
+            if (widgetItem) {
+                widgetItem.classList.remove('dragging');
+            }
         });
     }
 
@@ -363,6 +465,50 @@ class WidgetLibrary extends HTMLElement {
     clearSelection() {
         this.selectedWidget = null;
         this.render();
+    }
+
+    addWidgetToCanvas(widgetItem) {
+        // Empêcher les double-clics rapides
+        if (widgetItem.dataset.adding === 'true') {
+            console.log('🎯 Widget Library: Widget already being added, ignoring...');
+            return;
+        }
+        
+        widgetItem.dataset.adding = 'true';
+        
+        const widgetData = {
+            id: widgetItem.dataset.widgetId,
+            name: widgetItem.dataset.widgetName,
+            icon: widgetItem.dataset.widgetIcon,
+            description: widgetItem.dataset.widgetDescription,
+            requirements: JSON.parse(widgetItem.dataset.widgetRequirements || '{}'),
+            size: JSON.parse(widgetItem.dataset.widgetSize || '{"width": 4, "height": 3}'),
+            type: 'widget'
+        };
+
+        console.log('🎯 Widget Library: Adding widget to canvas via click:', widgetData.name);
+
+        // Find canvas and call handleWidgetDrop directly
+        const canvas = document.querySelector('dashboard-canvas');
+        if (canvas && canvas.handleWidgetDrop) {
+            // Create a fake event object for compatibility
+            const fakeEvent = {
+                clientX: 100,
+                clientY: 100,
+                preventDefault: () => {},
+                stopPropagation: () => {}
+            };
+            
+            canvas.handleWidgetDrop(widgetData, fakeEvent);
+            console.log('✅ Widget Library: Widget added successfully via click!');
+        } else {
+            console.error('❌ Widget Library: Canvas not found or handleWidgetDrop not available');
+        }
+        
+        // Reset flag après un délai
+        setTimeout(() => {
+            delete widgetItem.dataset.adding;
+        }, 1000);
     }
 
     // Global event handler

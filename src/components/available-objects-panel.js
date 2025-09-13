@@ -812,7 +812,8 @@ class AvailableObjectsPanel extends HTMLElement {
             category: fieldItem.dataset.fieldCategory,
             dataType: fieldItem.dataset.fieldType,
             cardinality: fieldItem.dataset.fieldCardinality,
-            source: fieldItem.dataset.fieldSource
+            source: fieldItem.dataset.fieldSource,
+            type: 'field'  // Ajout du type pour identification
         };
 
         e.dataTransfer.setData('application/json', JSON.stringify(fieldData));
@@ -828,7 +829,7 @@ class AvailableObjectsPanel extends HTMLElement {
             composed: true
         }));
 
-        console.log('📚 Drag started:', fieldData.displayName);
+        console.log('📚 Field drag started:', fieldData.displayName, 'Type:', fieldData.type);
     }
 
     handleDragEnd(e) {

@@ -15,11 +15,20 @@ class FeedingPanel extends HTMLElement {
         
         // State
         this.selectedWidget = null;
+        this.editingWidget = null; // Track widget being edited
         this.assignments = {
             dimensions: [],
             measures: [],
             filters: []
         };
+        
+        // Liste des widgets disponibles sur le canvas
+        this.canvasWidgets = [];
+        
+        // Messages de feedback pour Apply
+        this.feedbackMessage = '';
+        this.feedbackType = ''; // 'success', 'error', 'warning'
+        
         this.dragDropManager = null;
         
         // Bind methods
@@ -33,14 +42,14 @@ class FeedingPanel extends HTMLElement {
         this.render();
         this.bindEvents();
         
-        // Sélectionner automatiquement le Bar Chart par défaut
-        this.selectedWidget = 'bar-chart';
-        
         // Connect to global drag & drop system
         if (window.WidgetPlatform) {
             this.dragDropManager = window.WidgetPlatform.getDragDropManager();
             this.dragDropManager.onDrop(this.handleFieldDrop);
         }
+        
+        // Initialiser la liste des widgets du canvas
+        setTimeout(() => this.updateCanvasWidgets(), 100);
     }
 
     render() {
@@ -341,6 +350,12 @@ class FeedingPanel extends HTMLElement {
                     background: var(--background-secondary, #f5f6f7);
                     border-top: 1px solid var(--border-light, #eaecee);
                     display: flex;
+                    flex-direction: column;
+                    gap: var(--spacing-sm, 8px);
+                }
+                
+                .action-row {
+                    display: flex;
                     gap: var(--spacing-sm, 8px);
                 }
                 
@@ -354,6 +369,37 @@ class FeedingPanel extends HTMLElement {
                     font-size: 0.85em;
                     cursor: pointer;
                     transition: all var(--transition-fast, 0.15s ease);
+                }
+                
+                .feedback-message {
+                    padding: var(--spacing-sm, 8px);
+                    border-radius: var(--radius-sm, 4px);
+                    font-size: 0.85em;
+                    text-align: center;
+                    animation: fadeIn 0.3s ease;
+                }
+                
+                .feedback-message.success {
+                    background: #d4edda;
+                    color: #155724;
+                    border: 1px solid #c3e6cb;
+                }
+                
+                .feedback-message.error {
+                    background: #f8d7da;
+                    color: #721c24;
+                    border: 1px solid #f1b0b7;
+                }
+                
+                .feedback-message.warning {
+                    background: #fff3cd;
+                    color: #856404;
+                    border: 1px solid #ffd59b;
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(-10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 
                 .btn-config:hover {
@@ -392,10 +438,7 @@ class FeedingPanel extends HTMLElement {
         return `
             <div class="widget-selection">
                 <select class="widget-selector" id="widget-selector">
-                    <option value="bar-chart" ${this.selectedWidget === 'bar-chart' ? 'selected' : ''}>📊 Bar Chart</option>
-                    <option value="line-chart">📈 Line Chart (Coming Soon)</option>
-                    <option value="pie-chart">🥧 Pie Chart (Coming Soon)</option>
-                    <option value="table">📋 Table (Coming Soon)</option>
+                    ${this.renderWidgetOptions()}
                 </select>
             </div>
             
@@ -408,6 +451,38 @@ class FeedingPanel extends HTMLElement {
             ${this.renderAssignmentSummary()}
             ${this.renderConfigActions()}
         `;
+    }
+
+    renderWidgetOptions() {
+        if (this.canvasWidgets.length === 0) {
+            return `
+                <option value="" disabled selected>No widgets on canvas</option>
+                <option value="" disabled>Add widgets from Widget Library</option>
+            `;
+        }
+
+        let options = `<option value="" disabled ${!this.selectedWidget ? "selected" : ""}>Select a widget to configure</option>`;
+        
+        this.canvasWidgets.forEach(widget => {
+            const isSelected = this.selectedWidget === widget.id ? 'selected' : '';
+            const widgetIcon = this.getWidgetIcon(widget.type);
+            options += `<option value="${widget.id}" ${isSelected}>${widgetIcon} ${widget.name || widget.type} (ID: ${widget.id.substring(0, 8)}...)</option>`;
+        });
+
+        console.log('⚙️ Rendered widget options for selectedWidget:', this.selectedWidget);
+        return options;
+    }
+
+    getWidgetIcon(widgetType) {
+        const icons = {
+            'bar-chart': '📊',
+            'line-chart': '📈',
+            'pie-chart': '🥧',
+            'table': '📋',
+            'scatter-plot': '📈',
+            'dashboard': '📊'
+        };
+        return icons[widgetType] || '📊';
     }
 
     renderNoWidgetSelected() {
@@ -515,16 +590,53 @@ class FeedingPanel extends HTMLElement {
 
     renderConfigActions() {
         const canCreateWidget = this.assignments.dimensions.length > 0 && this.assignments.measures.length > 0;
+        const hasAssignments = this.assignments.dimensions.length > 0 || this.assignments.measures.length > 0 || this.assignments.filters.length > 0;
+        const hasSelectedWidget = this.selectedWidget && this.selectedWidget !== '';
+        const canApply = hasAssignments && hasSelectedWidget;
         
+        const isEditing = this.editingWidget !== null;
+        const buttonText = isEditing ? 
+            (canCreateWidget ? '💾 Update Widget' : '⏳ Need Data') :
+            (canCreateWidget ? '✨ Create Widget' : '⏳ Need Data');
+            
         return `
             <div class="config-actions">
-                <button class="btn-config clear-all-btn">
-                    🗑️ Clear All
-                </button>
-                <button class="btn-config create-widget-btn ${canCreateWidget ? 'primary' : ''}" 
-                        ${canCreateWidget ? '' : 'disabled'}>
-                    ${canCreateWidget ? '✨ Create Widget' : '⏳ Need Data'}
-                </button>
+                <div class="action-row">
+                    <button class="btn-config apply-btn ${canApply ? 'primary' : ''}" 
+                            ${canApply ? '' : 'disabled'}>
+                        🎯 Apply to Widget
+                    </button>
+                    <button class="btn-config clear-all-btn">
+                        🗑️ Clear All
+                    </button>
+                </div>
+                
+                ${this.renderFeedbackMessage()}
+                
+                <div class="action-row">
+                    <button class="btn-config create-widget-btn ${canCreateWidget ? 'primary' : ''}" 
+                            ${canCreateWidget ? '' : 'disabled'}>
+                        ${buttonText}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    renderFeedbackMessage() {
+        if (!this.feedbackMessage) return '';
+        
+        const iconMap = {
+            'success': '✅',
+            'error': '❌',
+            'warning': '⚠️'
+        };
+        
+        const icon = iconMap[this.feedbackType] || 'ℹ️';
+        
+        return `
+            <div class="feedback-message ${this.feedbackType}">
+                ${icon} ${this.feedbackMessage}
             </div>
         `;
     }
@@ -533,12 +645,23 @@ class FeedingPanel extends HTMLElement {
         const container = this.shadowRoot.querySelector('.feeding-container');
         if (!container) return;
 
+        // Listen for widget edit events from canvas
+        document.addEventListener('editWidget', (e) => {
+            this.handleWidgetEdit(e.detail);
+        });
+
         // Widget selector change
         const widgetSelector = this.shadowRoot.querySelector('#widget-selector');
         if (widgetSelector) {
             widgetSelector.addEventListener('change', (e) => {
+                const oldValue = this.selectedWidget;
                 this.selectedWidget = e.target.value;
-                console.log('⚙️ Widget selected:', this.selectedWidget);
+                console.log('⚙️ Widget selector changed:', {
+                    from: oldValue,
+                    to: this.selectedWidget,
+                    eventTarget: e.target.value,
+                    options: Array.from(e.target.options).map(opt => ({ value: opt.value, text: opt.text, selected: opt.selected }))
+                });
             });
         }
 
@@ -556,6 +679,11 @@ class FeedingPanel extends HTMLElement {
                 this.clearAssignments();
             }
             
+            // Apply button
+            if (e.target.classList.contains('apply-btn') && !e.target.disabled) {
+                this.applyDataToWidget();
+            }
+            
             // Create widget button
             if (e.target.classList.contains('create-widget-btn') && !e.target.disabled) {
                 this.createWidget();
@@ -565,41 +693,32 @@ class FeedingPanel extends HTMLElement {
         // Configure drop zones
         const dropZones = container.querySelectorAll('.drop-zone');
         dropZones.forEach(dropZone => {
-            // Configure as drop zone for drag manager
+            // Configure as drop zone for drag manager ONLY - let DragDropManager handle all events
             if (this.dragDropManager) {
                 this.dragDropManager.registerDropZone(dropZone, dropZone.dataset.dropZone);
             }
             
-            // Set up native drag & drop events
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'copy';
-                dropZone.classList.add('drag-over');
-            });
-            
-            dropZone.addEventListener('dragleave', (e) => {
-                if (!dropZone.contains(e.relatedTarget)) {
-                    dropZone.classList.remove('drag-over');
-                }
-            });
-            
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('drag-over');
-                
-                try {
-                    const fieldData = JSON.parse(e.dataTransfer.getData('application/json'));
-                    this.handleFieldDrop(fieldData, dropZone, dropZone.dataset.dropZone);
-                } catch (error) {
-                    console.warn('⚠️ Invalid drop data:', error);
-                }
-            });
+            // NO MORE native event listeners - completely removed to avoid interference
+            // DragDropManager will handle field drops, canvas will handle widget drops
         });
     }
 
     handleFieldDrop(fieldData, dropZone, dropType) {
-        // Valider que c'est une drop zone de ce composant
-        if (!this.shadowRoot.contains(dropZone)) return;
+        console.log('⚙️ Feeding Panel: handleFieldDrop called');
+        console.log('⚙️ Feeding Panel: dropZone:', dropZone);
+        console.log('⚙️ Feeding Panel: shadowRoot.contains(dropZone):', this.shadowRoot.contains(dropZone));
+        console.log('⚙️ Feeding Panel: dropZone.dataset.dropZone:', dropZone.dataset.dropZone);
+        
+        // Valider que c'est une drop zone de ce composant - version corrigée
+        const isOurDropZone = this.shadowRoot.contains(dropZone) || 
+                             this.shadowRoot.querySelector(`[data-drop-zone="${dropType}"]`) === dropZone;
+        
+        console.log('⚙️ Feeding Panel: isOurDropZone:', isOurDropZone);
+        
+        if (!isOurDropZone) {
+            console.log('⚙️ Feeding Panel: Not our drop zone, returning');
+            return;
+        }
 
         console.log('⚙️ Feeding Panel: Field dropped', fieldData.name, 'on', dropType);
 
@@ -704,6 +823,16 @@ class FeedingPanel extends HTMLElement {
             return;
         }
 
+        if (this.editingWidget) {
+            // Update existing widget
+            this.updateWidget();
+        } else {
+            // Create new widget
+            this.createNewWidget();
+        }
+    }
+
+    createNewWidget() {
         const widgetConfig = {
             type: this.selectedWidget,
             dimensions: this.assignments.dimensions,
@@ -718,7 +847,42 @@ class FeedingPanel extends HTMLElement {
             composed: true
         }));
 
-        console.log('✨ Widget creation requested:', widgetConfig);
+        this.clearAssignments();
+        console.log('✨ New widget created:', widgetConfig.type);
+    }
+
+    updateWidget() {
+        const updatedConfig = {
+            ...this.editingWidget.original,
+            dimensions: this.assignments.dimensions,
+            measures: this.assignments.measures,
+            filters: this.assignments.filters,
+            updated: new Date().toISOString()
+        };
+
+        // Dispatch update event to canvas
+        document.dispatchEvent(new CustomEvent('updateWidget', {
+            detail: {
+                index: this.editingWidget.index,
+                widget: updatedConfig
+            }
+        }));
+
+        this.dispatchEvent(new CustomEvent('widgetUpdated', {
+            detail: {
+                index: this.editingWidget.index,
+                widget: updatedConfig
+            },
+            bubbles: true,
+            composed: true
+        }));
+
+        // Clear editing state
+        this.editingWidget = null;
+        this.clearAssignments();
+        this.render();
+        
+        console.log('💾 Widget updated:', updatedConfig.type, updatedConfig.id);
     }
 
     getTotalAssignments() {
@@ -739,9 +903,57 @@ class FeedingPanel extends HTMLElement {
         // This method exists for compatibility with the notification system
     }
 
+    // Handle widget edit request from canvas
+    handleWidgetEdit(editData) {
+        const { widget, index, source } = editData;
+        
+        console.log('⚙️ Feeding Panel: Handling widget edit for:', widget.type, widget.id);
+        
+        // Select the widget type
+        this.selectedWidget = widget.type;
+        const widgetSelector = this.shadowRoot.querySelector('#widget-selector');
+        if (widgetSelector) {
+            widgetSelector.value = widget.type;
+        }
+        
+        // Load widget's current assignments
+        this.assignments = {
+            dimensions: [...(widget.dimensions || [])],
+            measures: [...(widget.measures || [])],
+            filters: [...(widget.filters || [])]
+        };
+        
+        // Store reference to the widget being edited
+        this.editingWidget = {
+            id: widget.id,
+            index: index,
+            original: widget
+        };
+        
+        // Update the visual display
+        this.render();
+        
+        console.log('⚙️ Widget loaded for editing. Assignments:', this.assignments);
+        console.log('⚙️ Editing widget reference:', this.editingWidget);
+    }
+
     // Global event handler for cross-component communication
     handleGlobalEvent(eventType, data) {
+        console.log('⚙️ Feeding Panel: handleGlobalEvent called with:', eventType, data);
+        
         switch (eventType) {
+            case 'fieldDrop':
+                console.log('⚙️ Feeding Panel: Processing fieldDrop via handleGlobalEvent');
+                this.handleFieldDrop(data.fieldData, data.dropZone, data.dropType);
+                break;
+            case 'widgetAdded':
+                console.log('⚙️ Feeding Panel: Widget added to canvas:', data);
+                this.updateCanvasWidgets();
+                break;
+            case 'widgetRemoved':
+                console.log('⚙️ Feeding Panel: Widget removed from canvas:', data);
+                this.updateCanvasWidgets();
+                break;
             case 'widgetSelected':
                 this.selectWidget(data.type);
                 break;
@@ -750,6 +962,195 @@ class FeedingPanel extends HTMLElement {
                 this.clearAssignments();
                 break;
         }
+    }
+
+    updateCanvasWidgets() {
+        // Récupérer tous les widgets du canvas
+        const canvas = document.querySelector('dashboard-canvas');
+        console.log('⚙️ Feeding Panel: Canvas found:', !!canvas);
+        
+        if (canvas && canvas.getAllWidgets) {
+            const widgets = canvas.getAllWidgets();
+            console.log('⚙️ Feeding Panel: Raw widgets from canvas:', widgets);
+            console.log('⚙️ Feeding Panel: First widget detail:', widgets[0]);
+            
+            this.canvasWidgets = widgets;
+            console.log('⚙️ Feeding Panel: Updated canvas widgets:', this.canvasWidgets);
+            console.log('⚙️ Feeding Panel: Widget IDs available:', this.canvasWidgets.map(w => w.id));
+            
+            // Auto-select first widget if none selected and widgets available
+            if (!this.selectedWidget && this.canvasWidgets.length > 0) {
+                this.selectedWidget = this.canvasWidgets[0].id;
+                console.log('⚙️ Feeding Panel: Auto-selected first widget:', this.selectedWidget);
+            }
+            
+            this.render();
+            
+            // Force sync combo box value after render
+            this.syncWidgetSelector();
+        } else {
+            console.log('⚙️ Feeding Panel: Canvas not found or getAllWidgets method missing');
+            console.log('⚙️ Feeding Panel: Available elements:', Array.from(document.querySelectorAll('dashboard-canvas')));
+        }
+    }
+
+    syncWidgetSelector() {
+        // Ensure combo box is synchronized with selectedWidget
+        const widgetSelector = this.shadowRoot.querySelector('#widget-selector');
+        if (widgetSelector && this.selectedWidget) {
+            widgetSelector.value = this.selectedWidget;
+            console.log('⚙️ Feeding Panel: Synced combo box to:', this.selectedWidget);
+            console.log('⚙️ Feeding Panel: Combo box current value:', widgetSelector.value);
+        }
+    }
+
+    applyDataToWidget() {
+        console.log('⚙️ Feeding Panel: Apply button clicked');
+        console.log('⚙️ Feeding Panel: selectedWidget:', this.selectedWidget);
+        console.log('⚙️ Feeding Panel: canvasWidgets:', this.canvasWidgets);
+        console.log('⚙️ Feeding Panel: canvasWidgets IDs:', this.canvasWidgets.map(w => `"${w.id}"`));
+        console.log('⚙️ Feeding Panel: selectedWidget === first widget ID?', this.selectedWidget === this.canvasWidgets[0]?.id);
+        console.log('⚙️ Feeding Panel: First widget details:', this.canvasWidgets[0]);
+        
+        // Validation 1: Widget sélectionné
+        if (!this.selectedWidget || this.selectedWidget === '') {
+            this.showFeedback('Please select a widget from the dropdown', 'error');
+            return;
+        }
+
+        // Validation 2: Au moins une donnée assignée
+        const hasAssignments = this.assignments.dimensions.length > 0 || 
+                              this.assignments.measures.length > 0 || 
+                              this.assignments.filters.length > 0;
+        
+        if (!hasAssignments) {
+            this.showFeedback('Please assign at least one dimension or measure', 'warning');
+            return;
+        }
+
+        // Validation 3: Trouver le widget sur le canvas
+        const targetWidget = this.canvasWidgets.find(w => w.id === this.selectedWidget);
+        console.log('⚙️ Feeding Panel: targetWidget found:', !!targetWidget, targetWidget);
+        
+        if (!targetWidget) {
+            this.showFeedback('Selected widget not found on canvas', 'error');
+            // Mettre à jour la liste des widgets et réessayer
+            this.updateCanvasWidgets();
+            return;
+        }
+
+        // Validation 4: Compatibilité avec le type de widget
+        const validationResult = this.validateDataCompatibility(targetWidget.type);
+        if (!validationResult.isValid) {
+            this.showFeedback(validationResult.message, 'error');
+            return;
+        }
+
+        // Structurer les données
+        const dataConfig = {
+            dimensions: [...this.assignments.dimensions],
+            measures: [...this.assignments.measures],
+            filters: [...this.assignments.filters],
+            timestamp: new Date().toISOString(),
+            appliedBy: 'data-assignment-panel'
+        };
+
+        console.log('⚙️ Feeding Panel: Sending data to widget:', targetWidget.id, dataConfig);
+
+        // Envoyer les données au widget
+        try {
+            this.sendDataToWidget(targetWidget.id, dataConfig);
+            this.showFeedback(`Data applied successfully to ${targetWidget.name || targetWidget.type}`, 'success');
+            
+            // Auto-clear feedback après 3 secondes
+            setTimeout(() => {
+                this.showFeedback('', '');
+            }, 3000);
+            
+        } catch (error) {
+            console.error('⚙️ Feeding Panel: Error applying data:', error);
+            this.showFeedback('Error applying data to widget', 'error');
+        }
+    }
+
+    validateDataCompatibility(widgetType) {
+        // Règles de validation par type de widget
+        const rules = {
+            'bar-chart': {
+                requiresDimensions: true,
+                requiresMeasures: true,
+                minDimensions: 1,
+                minMeasures: 1
+            },
+            'line-chart': {
+                requiresDimensions: true,
+                requiresMeasures: true,
+                minDimensions: 1,
+                minMeasures: 1
+            },
+            'pie-chart': {
+                requiresDimensions: true,
+                requiresMeasures: true,
+                minDimensions: 1,
+                minMeasures: 1,
+                maxDimensions: 1
+            },
+            'table': {
+                requiresDimensions: false,
+                requiresMeasures: false,
+                minDimensions: 0,
+                minMeasures: 0
+            }
+        };
+
+        const rule = rules[widgetType] || rules['table']; // Défaut : table (flexible)
+        
+        // Vérifier dimensions
+        if (rule.requiresDimensions && this.assignments.dimensions.length === 0) {
+            return { isValid: false, message: `${widgetType} requires at least one dimension` };
+        }
+        
+        if (rule.minDimensions && this.assignments.dimensions.length < rule.minDimensions) {
+            return { isValid: false, message: `${widgetType} requires at least ${rule.minDimensions} dimension(s)` };
+        }
+        
+        if (rule.maxDimensions && this.assignments.dimensions.length > rule.maxDimensions) {
+            return { isValid: false, message: `${widgetType} allows maximum ${rule.maxDimensions} dimension(s)` };
+        }
+
+        // Vérifier measures
+        if (rule.requiresMeasures && this.assignments.measures.length === 0) {
+            return { isValid: false, message: `${widgetType} requires at least one measure` };
+        }
+        
+        if (rule.minMeasures && this.assignments.measures.length < rule.minMeasures) {
+            return { isValid: false, message: `${widgetType} requires at least ${rule.minMeasures} measure(s)` };
+        }
+
+        return { isValid: true, message: 'Data is compatible' };
+    }
+
+    sendDataToWidget(widgetId, dataConfig) {
+        // Méthode 1: Via dashboard-canvas
+        const canvas = document.querySelector('dashboard-canvas');
+        if (canvas && canvas.updateWidgetData) {
+            canvas.updateWidgetData(widgetId, dataConfig);
+            return;
+        }
+
+        // Méthode 2: Événement personnalisé
+        document.dispatchEvent(new CustomEvent('updateWidgetData', {
+            detail: {
+                widgetId: widgetId,
+                dataConfig: dataConfig
+            }
+        }));
+    }
+
+    showFeedback(message, type) {
+        this.feedbackMessage = message;
+        this.feedbackType = type;
+        this.render();
     }
 }
 

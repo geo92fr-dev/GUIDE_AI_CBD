@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Drag Test - Manual</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #12171C;
+            color: white;
+            display: flex;
+            height: 100vh;
+        }
+        
+        .source {
+            width: 250px;
+            background: #1A2733;
+            padding: 20px;
+            border-right: 1px solid #333;
+        }
+        
+        .widget-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #2A3F5A;
+            border: 2px solid #1B90FF;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .widget-item:hover {
+            background: #3A5F7A;
+        }
+        
+        .widget-item.manual-dragging {
+            opacity: 0.7;
+            transform: scale(0.95);
+        }
+        
+        .target {
+            flex: 1;
+            background: #0F1419;
+            padding: 20px;
+            border: 2px dashed #555;
+            margin: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            position: relative;
+        }
+        
+        .target.drag-over {
+            border-color: #1B90FF;
+            background: rgba(27, 144, 255, 0.1);
+        }
+        
+        .floating-widget {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            background: #2A3F5A;
+            border: 2px solid #1B90FF;
+            border-radius: 8px;
+            padding: 10px;
+            opacity: 0.8;
+            transform: translate(-50%, -50%);
+        }
+        
+        .log {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="source">
+        <h3>Widgets (Manual D&D)</h3>
+        <div class="widget-item" data-widget="bar-chart">
+            📊 Bar Chart Widget
+        </div>
+        <div class="widget-item" data-widget="line-chart">
+            📈 Line Chart Widget
+        </div>
+        <div class="widget-item" data-widget="pie-chart">
+            🥧 Pie Chart Widget
+        </div>
+    </div>
+    
+    <div class="target" id="drop-zone">
+        Drop widgets here (Manual D&D Test)
+    </div>
+    
+    <div class="log" id="log"></div>
+
+    <script>
+        const log = document.getElementById('log');
+        let isDragging = false;
+        let dragData = null;
+        let floatingWidget = null;
+        
+        function addLog(message) {
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `<div>[${time}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function createFloatingWidget(text, x, y) {
+            if (floatingWidget) {
+                floatingWidget.remove();
+            }
+            
+            floatingWidget = document.createElement('div');
+            floatingWidget.className = 'floating-widget';
+            floatingWidget.textContent = text;
+            floatingWidget.style.left = x + 'px';
+            floatingWidget.style.top = y + 'px';
+            document.body.appendChild(floatingWidget);
+        }
+        
+        function removeFloatingWidget() {
+            if (floatingWidget) {
+                floatingWidget.remove();
+                floatingWidget = null;
+            }
+        }
+        
+        // Manual drag & drop avec mouse events
+        document.addEventListener('mousedown', (e) => {
+            const widget = e.target.closest('.widget-item');
+            if (widget) {
+                isDragging = true;
+                dragData = {
+                    type: 'widget',
+                    id: widget.dataset.widget,
+                    name: widget.textContent.trim()
+                };
+                
+                widget.classList.add('manual-dragging');
+                createFloatingWidget(dragData.name, e.clientX, e.clientY);
+                
+                addLog(`🟢 Manual DRAG START: ${dragData.name}`);
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && floatingWidget) {
+                floatingWidget.style.left = e.clientX + 'px';
+                floatingWidget.style.top = e.clientY + 'px';
+                
+                // Check if over drop zone
+                const dropZone = document.getElementById('drop-zone');
+                const rect = dropZone.getBoundingClientRect();
+                const isOver = e.clientX >= rect.left && e.clientX <= rect.right && 
+                              e.clientY >= rect.top && e.clientY <= rect.bottom;
+                
+                if (isOver) {
+                    dropZone.classList.add('drag-over');
+                } else {
+                    dropZone.classList.remove('drag-over');
+                }
+            }
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                const dropZone = document.getElementById('drop-zone');
+                const rect = dropZone.getBoundingClientRect();
+                const isOver = e.clientX >= rect.left && e.clientX <= rect.right && 
+                              e.clientY >= rect.top && e.clientY <= rect.bottom;
+                
+                if (isOver) {
+                    addLog(`🟢 Manual DROP: ${dragData.name} dropped successfully!`);
+                    dropZone.innerHTML = `Dropped: ${dragData.name}<br><small>Manual D&D Success!</small>`;
+                } else {
+                    addLog(`🔴 Manual DROP: ${dragData.name} dropped outside target`);
+                }
+                
+                // Cleanup
+                document.querySelectorAll('.widget-item').forEach(w => w.classList.remove('manual-dragging'));
+                dropZone.classList.remove('drag-over');
+                removeFloatingWidget();
+                
+                isDragging = false;
+                dragData = null;
+            }
+        });
+        
+        // Test native drag & drop aussi
+        document.querySelectorAll('.widget-item').forEach(widget => {
+            widget.setAttribute('draggable', 'true');
+            
+            widget.addEventListener('dragstart', (e) => {
+                const data = {
+                    type: 'widget',
+                    id: widget.dataset.widget,
+                    name: widget.textContent.trim()
+                };
+                e.dataTransfer.setData('application/json', JSON.stringify(data));
+                addLog(`🟡 Native DRAG START: ${data.name}`);
+            });
+        });
+        
+        const dropZone = document.getElementById('drop-zone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+            addLog(`🟡 Native DRAGOVER`);
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                addLog(`🟢 Native DROP: ${data.name} dropped successfully!`);
+                dropZone.innerHTML = `Dropped: ${data.name}<br><small>Native D&D Success!</small>`;
+            } catch (error) {
+                addLog(`🔴 Native DROP ERROR: ${error.message}`);
+            }
+        });
+        
+        addLog('🚀 Manual D&D test loaded - Try both manual (mouse) and native (drag) methods');
+    </script>
+</body>
+</html>
