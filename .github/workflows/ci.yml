@@ -32,8 +32,11 @@ jobs:
         run: |
           if npm run | grep -q "test"; then npm test --silent || exit 1; else echo "No test script defined"; fi
 
-      - name: Markdown lint
-        uses: reviewdog/action-markdownlint@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
+      - name: Markdown lint (strict)
+        run: |
+          # Use npx to run markdownlint-cli if not installed in project
+          if command -v npx >/dev/null 2>&1; then
+            npx markdownlint "**/*.md" || exit 1
+          else
+            echo "npx not available"; exit 1
+          fi

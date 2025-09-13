@@ -1,0 +1,58 @@
+name: Weekly Metrics Report
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # every Monday at 06:00 UTC
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Gather metrics and update METRICS.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          node -e "
+          const https = require('https');
+          const repo = process.env.REPO;
+          const token = process.env.GITHUB_TOKEN;
+          const options = (path) => ({
+            hostname: 'api.github.com',
+            path,
+            method: 'GET',
+            headers: { 'User-Agent': 'metrics-action', 'Authorization': `token ${token}` }
+          });
+
+          const req = https.request(options(`/repos/${repo}/issues?labels=tech-debt&state=open`), res => {
+            let data=''; res.on('data', c=>data+=c); res.on('end', ()=>{
+              let issues = JSON.parse(data);
+              const openTechDebt = issues.length;
+              // Get PRs merged in last 7 days
+              const since = new Date(Date.now() - 7*24*3600*1000).toISOString();
+              const req2 = https.request(options(`/repos/${repo}/pulls?state=closed&per_page=100`), r2=>{
+                let d=''; r2.on('data', c=>d+=c); r2.on('end', ()=>{
+                  const prs = JSON.parse(d);
+                  const merged = prs.filter(p=>p.merged_at && new Date(p.merged_at) > new Date(since)).length;
+                  const content = `# METRICS - Collaboration & Repo Metrics\n\n- Open tech-debt issues: ${openTechDebt}\n- PRs merged last 7 days: ${merged}\n- New prompts added last 7 days: 0\n- Average time PR -> merge (days): n/a\n- Clarifications per prompt (weekly): n/a\n`;
+                  require('fs').writeFileSync('METRICS.md', content);
+                });
+              }); req2.on('error', e=>{console.error(e); process.exit(1)}); req2.end();
+            });
+          }); req.on('error', e=>{console.error(e); process.exit(1)}); req.end();
+        
+      - name: Commit metrics
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add METRICS.md
+          git commit -m "chore(metrics): update METRICS.md [ci skip]" || echo "No changes to commit"
+          git push origin HEAD:main
