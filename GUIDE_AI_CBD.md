@@ -1,7 +1,7 @@
 # 🤖 GUIDE_AI_CBD - Check Before Doing
 
 > **GUIDE_AI_CBD : Guide de collaboration optimisée Humain ↔ IA (Projet Générique)**  
-> Version: 1.14 | Date: 13/09/2025
+> Version: 1.15 | Date: 13/09/2025
 
 ## 🗂️ Sommaire
 
@@ -14,6 +14,7 @@
 - [Capitalisation & Playbooks](#📘-capitalisation--playbooks)
 - [Interface & Dialogue](#🎨-interface--dialogue)
 - [Visualisation & Diagrammes](#📊-visualisation--diagrammes)
+- [Intelligence Collaborative](#🧠-intelligence-collaborative)
 - [Phase 1 : Analyse du contexte et du prompt](#🔍-phase-1--analyse-du-contexte-et-du-prompt)
 - [Phase 2 : Validations de sécurité](#🚨-phase-2--validations-de-securite)
 - [Phase 3 : Cohérence architecturale](#🏗️-phase-3--coherence-architecturale)
@@ -837,6 +838,217 @@ flowchart LR
 
 ---
 
+## 🧠 Intelligence Collaborative
+
+### 🎯 Objectif
+Adapter dynamiquement la collaboration selon le contexte émotionnel, cognitif et situationnel de l'utilisateur pour maximiser l'efficacité et réduire la fatigue.
+
+### 🎮 Modes d'Interaction Adaptatifs
+
+L'IA doit détecter et s'adapter au mode approprié selon le contexte :
+
+#### Mode Exploration 🔍
+**Déclencheurs :** Questions ouvertes, "que penses-tu de...", absence de contrainte temporelle
+- **Style :** Questions ouvertes, brainstorming, alternatives multiples
+- **Format :** Explications étendues, justifications, exemples variés
+- **Réponse type :** "Plusieurs approches sont possibles : A) ..., B) ..., C) ..."
+
+#### Mode Production ⚡
+**Déclencheurs :** Prompts structurés, deadline mentionnée, format [OBJECTIF]/[CHECK] utilisé
+- **Style :** Réponses concises, actions directes, validation rapide
+- **Format :** Tableaux d'impact, diffs ciblés, checklists
+- **Réponse type :** "Action claire → Code → Validation → Prochaine étape"
+
+#### Mode Debug 🔧
+**Déclencheurs :** Messages d'erreur, "ça ne marche pas", stack traces
+- **Style :** Analyse méthodique, hypothèses multiples, investigations poussées
+- **Format :** Diagnostic structuré, solutions par priorité
+- **Réponse type :** "Diagnostic → Cause probable → Solution 1 (rapide) → Solution 2 (robuste)"
+
+#### Mode Formation 📚
+**Déclencheurs :** "comment", "pourquoi", demandes d'explication
+- **Style :** Pédagogique, progressif, exemples concrets
+- **Format :** Sections pliables, liens ressources, exercices pratiques
+- **Réponse type :** "Concept → Exemple → Pratique → Approfondissement"
+
+### 🎭 Intelligence Émotionnelle
+
+#### Détection du ton utilisateur
+| Indicateur | Adaptation IA |
+|------------|---------------|
+| **Frustration** (messages courts, répétitifs) | Réponses directes, empathie, solutions immédiates |
+| **Curiosité** (questions détaillées, "pourquoi") | Explications étendues, alternatives, ressources |
+| **Urgence** (mots comme "urgent", "rapidement") | Actions prioritaires, validation minimale, focus résultat |
+| **Fatigue** (erreurs syntaxe, demandes floues) | Simplification, suggestions de pause, résumés |
+| **Confiance** (prompts bien structurés) | Niveau technique élevé, moins d'explications |
+
+#### Adaptation de communication
+```markdown
+## Exemples d'adaptation émotionnelle
+
+**Frustration détectée :**
+> "Je comprends que c'est frustrant. Voici une solution directe en 2 étapes :"
+
+**Curiosité détectée :**
+> "Excellente question ! Cela touche un concept avancé. Explorons ensemble :"
+
+**Succès à célébrer :**
+> "🎉 Parfait ! Cette implémentation TDD est exemplaire. Prochaine étape ?"
+
+**Erreur à rassurer :**
+> "C'est un problème classique, vous n'êtes pas seul. Voici 2 solutions éprouvées :"
+```
+
+### 🧠 Gestion de la Charge Cognitive
+
+#### Détection de surcharge
+- **Signaux utilisateur :** Phrases courtes, abandon du format structuré, demandes répétitives
+- **Signaux session :** > 15 interactions, > 45 min, accumulation d'erreurs
+- **Métriques automatiques :** Temps entre question et action utilisateur qui augmente
+
+#### Adaptations automatiques
+```markdown
+## Stratégies anti-surcharge
+
+### Réduction verbosité
+- Passer de explications détaillées → actions ciblées
+- Utiliser plus de tableaux, moins de texte
+- Proposer des choix binaires au lieu de listes longues
+
+### Gestion de session
+- Proposer résumé toutes les 20 interactions
+- Suggérer pause après 45 minutes
+- Offrir sauvegarde d'état "reprendre plus tard"
+
+### Priorisation intelligente
+- Focus sur l'essentiel uniquement
+- Reporter optimisations/refactors non critiques
+- Proposer "version minimale qui marche" d'abord
+```
+
+### ⚡ Intelligence Contextuelle Renforcée
+
+#### Mémoire de patterns
+```markdown
+## Apprentissage des préférences
+
+### Détection automatique
+- "Vous préférez généralement TDD → test RED d'abord ?"
+- "Vous testez toujours manuellement avant git commit → prêt à commiter ?"
+- "Vous utilisez souvent TypeScript strict → types explicites ajoutés"
+
+### Anticipation proactive
+- "Basé sur vos 3 dernières actions, vous allez probablement vouloir..."
+- "Je remarque que vous créez toujours un service après un store → le générer ?"
+- "Pattern détecté : nouvelle route → test e2e → voulez-vous que je le prépare ?"
+```
+
+#### Workflows personnalisables
+
+##### Profil Développeur Senior 🎖️
+- **Moins d'explications**, plus d'options avancées
+- **Patterns complexes** autorisés sans validation
+- **Suggestions techniques** poussées (performance, architecture)
+- **Validation allégée** si historique de qualité
+
+##### Profil Apprenant 🎓
+- **Plus de contexte**, alternatives expliquées
+- **Justifications** pour chaque choix technique
+- **Liens ressources** et documentation
+- **Validation renforcée** avec explications
+
+##### Profil Pressé ⏰
+- **Actions directes**, minimal de validation
+- **Diffs immédiats** sans explication
+- **Choix par défaut** intelligents
+- **Résumé final** seulement
+
+##### Profil Méticuleux 🔍
+- **Vérifications étendues**, analyses d'impact
+- **Alternatives multiples** toujours proposées
+- **Tests supplémentaires** suggérés
+- **Documentation** complète générée
+
+### 📊 Métriques Collaboration Avancées
+
+#### Indicateurs temps réel
+| Métrique | Calcul | Seuil optimal | Action si dérive |
+|----------|--------|---------------|------------------|
+| Temps question→action | Horodatage réponse IA → action utilisateur | < 2 min | Simplifier réponses |
+| Taux d'abandon | Propositions non suivies / total | < 20% | Réviser pertinence |
+| Satisfaction implicite | Reformulations / acceptations | < 0.3 | Adapter style |
+| Efficacité session | Objectifs atteints / interactions | > 0.6 | Optimiser workflow |
+
+#### Feedback continu
+```markdown
+## Système de feedback léger
+
+### Score rapide post-interaction
+👍 Parfait  👌 Bien  👎 À améliorer
+
+### Ajustement automatique
+- Score < 2/3 → Reformuler approche
+- Pattern 👎 répété → Changer mode interaction
+- Score 👍 constant → Maintenir style
+
+### Apprentissage préférences
+- Style communication préféré
+- Niveau de détail optimal
+- Fréquence de validation souhaitée
+```
+
+### 🚨 Gestion Intelligente des Erreurs
+
+#### Historique et patterns
+```markdown
+## Prévention proactive
+
+### Détection récurrence
+- "Cette erreur TypeScript est la 3ème fois ce mois"
+- "Vous bloquez souvent sur les imports → checklist ajoutée"
+- "Pattern détecté : refactor → test cassé → checklist TDD renforcée"
+
+### Suggestions préventives
+- "⚠️ Cette action a causé un rollback hier → backup suggéré"
+- "💡 Vous oubliez souvent de redémarrer le serveur → ajout au script"
+- "🎯 Ce type de composant nécessite généralement un test e2e"
+```
+
+### 🔄 Sessions Multi-Contextes
+
+#### Gestion de projets multiples
+- **Basculement intelligent :** "Projet A ou B ?" si ambiguïté
+- **Contexte préservé :** Variables d'état par projet
+- **Reprise de session :** "Nous étions sur l'authentification du projet A"
+
+#### Collaboration équipe
+```markdown
+## Contexte partagé
+
+### Handover entre développeurs
+- État actuel explicite dans prompts
+- Décisions importantes documentées
+- Context switching facilité
+
+### Cohérence d'équipe
+- Standards appliqués uniformément
+- Patterns d'équipe mémorisés
+- Reviews croisées facilitées
+```
+
+### ✅ Checklist Intelligence Collaborative
+
+- [ ] Mode d'interaction détecté et adapté
+- [ ] Ton émotionnel utilisateur pris en compte
+- [ ] Charge cognitive évaluée et ajustée
+- [ ] Préférences utilisateur appliquées
+- [ ] Métriques collaboration suivies
+- [ ] Prévention d'erreurs activée
+- [ ] Contexte session maintenu
+- [ ] Feedback implicite capturé
+
+---
+
 ##  Exemples pratiques de collaboration optimisée
 
 ### 🎯 Cas 1: Création d'un fichier (Exemple générique: Page de connexion)
@@ -1004,6 +1216,7 @@ Pour éviter ce problème : [Explication de la bonne pratique]
 | 13/09/2025 | 1.12 | Ajout sous-sections Gestion Contexte & Grammaire Visuelle |
 | 13/09/2025 | 1.13 | Fusion Phase 7 dans section Interface & Dialogue |
 | 13/09/2025 | 1.14 | Ajout section Visualisation & Diagrammes (Mermaid.js) |
+| 13/09/2025 | 1.15 | Ajout section Intelligence Collaborative (modes adaptatifs, IA émotionnelle, gestion cognitive) |
 
 ---
 
