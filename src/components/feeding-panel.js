@@ -179,17 +179,36 @@ class FeedingPanel extends HTMLElement {
                     align-items: center;
                     justify-content: space-between;
                     padding: var(--spacing-sm, 8px);
-                    background: white;
-                    border: 1px solid var(--border-light, #eaecee);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
                     border-radius: var(--radius-sm, 4px);
                     transition: all var(--transition-fast, 0.15s ease);
                     animation: slideIn 0.3s ease-out;
+                    margin: 2px 0;
                 }
                 
-                .assigned-field:hover {
-                    border-color: var(--business-teal, #049f9a);
+                .assigned-field.dimension {
+                    background: #89D1FF;
+                    color: white;
+                }
+                
+                .assigned-field.measure {
+                    background: #FFC933;
+                    color: #333;
+                }
+                
+                .assigned-field.dimension:hover {
+                    border-color: white;
+                    background: #1B90FF;
                     transform: translateY(-1px);
-                    box-shadow: 0 2px 8px rgba(4, 159, 154, 0.1);
+                    box-shadow: 0 2px 8px rgba(137, 209, 255, 0.3);
+                }
+                
+                .assigned-field.measure:hover {
+                    border-color: #333;
+                    background: #E76500;
+                    color: white;
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(255, 201, 51, 0.3);
                 }
                 
                 .field-info {
@@ -211,7 +230,6 @@ class FeedingPanel extends HTMLElement {
                 
                 .field-name {
                     font-weight: 500;
-                    color: var(--text-primary, #1a2733);
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -219,21 +237,49 @@ class FeedingPanel extends HTMLElement {
                     margin-bottom: 2px;
                 }
                 
+                .assigned-field.dimension .field-name {
+                    color: white;
+                }
+                
+                .assigned-field.measure .field-name {
+                    color: #333;
+                }
+                
                 .field-meta {
                     font-size: 0.75em;
-                    color: var(--text-secondary, #5b738b);
+                }
+                
+                .assigned-field.dimension .field-meta {
+                    color: rgba(255, 255, 255, 0.8);
+                }
+                
+                .assigned-field.measure .field-meta {
+                    color: rgba(0, 0, 0, 0.6);
                 }
                 
                 .remove-field {
                     background: none;
                     border: none;
-                    color: var(--business-red, #e74c3c);
                     cursor: pointer;
                     padding: var(--spacing-xs, 4px);
                     border-radius: var(--radius-sm, 4px);
                     font-size: 0.9em;
                     opacity: 0.7;
                     transition: all var(--transition-fast, 0.15s ease);
+                }
+                
+                .assigned-field.dimension .remove-field {
+                    color: rgba(255, 255, 255, 0.8);
+                }
+                
+                .assigned-field.measure .remove-field {
+                    color: rgba(0, 0, 0, 0.6);
+                }
+                
+                .remove-field:hover {
+                    color: white;
+                    background: rgba(255, 255, 255, 0.1);
+                    opacity: 1;
                 }
                 
                 .remove-field:hover {
@@ -429,7 +475,7 @@ class FeedingPanel extends HTMLElement {
 
     renderAssignedField(field) {
         return `
-            <div class="assigned-field" data-field-id="${field.id}">
+            <div class="assigned-field ${field.category === 'DIMENSION' ? 'dimension' : 'measure'}" data-field-id="${field.id}">
                 <div class="field-info">
                     <span class="field-icon">${field.category === 'DIMENSION' ? '🏷️' : '📊'}</span>
                     <div class="field-details">
@@ -437,7 +483,7 @@ class FeedingPanel extends HTMLElement {
                         <div class="field-meta">${field.dataType} • ${field.source}</div>
                     </div>
                 </div>
-                <button class="remove-field" onclick="this.closest('feeding-panel').removeField('${field.id}')" title="Remove field">
+                <button class="remove-field" data-field-id="${field.id}" title="Remove field">
                     ✕
                 </button>
             </div>
@@ -472,12 +518,11 @@ class FeedingPanel extends HTMLElement {
         
         return `
             <div class="config-actions">
-                <button class="btn-config" onclick="this.closest('feeding-panel').clearAssignments()">
+                <button class="btn-config clear-all-btn">
                     🗑️ Clear All
                 </button>
-                <button class="btn-config ${canCreateWidget ? 'primary' : ''}" 
-                        ${canCreateWidget ? '' : 'disabled'}
-                        onclick="this.closest('feeding-panel').createWidget()">
+                <button class="btn-config create-widget-btn ${canCreateWidget ? 'primary' : ''}" 
+                        ${canCreateWidget ? '' : 'disabled'}>
                     ${canCreateWidget ? '✨ Create Widget' : '⏳ Need Data'}
                 </button>
             </div>
@@ -496,6 +541,26 @@ class FeedingPanel extends HTMLElement {
                 console.log('⚙️ Widget selected:', this.selectedWidget);
             });
         }
+
+        // Remove field buttons
+        container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-field')) {
+                const fieldId = e.target.dataset.fieldId;
+                if (fieldId) {
+                    this.removeField(fieldId);
+                }
+            }
+            
+            // Clear all button
+            if (e.target.classList.contains('clear-all-btn')) {
+                this.clearAssignments();
+            }
+            
+            // Create widget button
+            if (e.target.classList.contains('create-widget-btn') && !e.target.disabled) {
+                this.createWidget();
+            }
+        });
 
         // Configure drop zones
         const dropZones = container.querySelectorAll('.drop-zone');
@@ -664,6 +729,14 @@ class FeedingPanel extends HTMLElement {
 
     getAssignments() {
         return { ...this.assignments };
+    }
+
+    // Update fields when data source changes (compatibility with data loading system)
+    updateFields(fields) {
+        console.log('⚙️ Feeding Panel: updateFields called with', fields?.length || 0, 'fields');
+        // For now, just log the update - the feeding panel doesn't need to display all fields
+        // It receives fields via drag & drop from the Available Objects panel
+        // This method exists for compatibility with the notification system
     }
 
     // Global event handler for cross-component communication

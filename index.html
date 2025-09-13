@@ -182,6 +182,46 @@
             }
         }
         
+        /* Data Source Selector */
+        .data-source-selector {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--background-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .data-source-selector:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(27, 144, 255, 0.2);
+        }
+        
+        .data-source-selector option {
+            background: var(--background-primary);
+            color: var(--text-primary);
+            padding: var(--spacing-sm);
+        }
+        
+        .data-source-container {
+            padding: var(--spacing-md);
+            background: var(--background-primary);
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .data-source-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
         /* Panel Headers */
         .panel-header {
             background: var(--primary-blue);
@@ -286,13 +326,25 @@
         
         <!-- RIGHT PANEL 2: Available Objects (WebI Dictionary) -->
         <aside class="right-panel-2">
+            <!-- Data Source Selector -->
+            <div class="data-source-container">
+                <label class="data-source-label">📊 Select Data Source:</label>
+                <select class="data-source-selector" id="data-source-selector">
+                    <option value="">Choose a dataset...</option>
+                    <option value="samples/sales-data.csv">📊 Sales Data</option>
+                    <option value="samples/marketing-data.csv">📈 Marketing Campaigns</option>
+                    <option value="samples/production-data.csv">🏭 Production Lines</option>
+                    <option value="samples/customer-orders.csv">🛒 Customer Orders</option>
+                    <option value="samples/stock-market-data.csv">💹 Stock Market</option>
+                    <option value="samples/finance-data.csv">💰 Finance Data</option>
+                    <option value="samples/hr-data.csv">👥 HR Data</option>
+                </select>
+            </div>
+            
             <div class="panel-header">
                 <div class="panel-title">
-                    <span class="panel-icon">📚</span>
+                    <span class="panel-icon">�</span>
                     <span>Available Objects</span>
-                </div>
-                <div class="panel-actions">
-                    <button class="btn-header" id="load-data" title="Load CSV Data">📤</button>
                 </div>
             </div>
             <!-- Available Objects Panel Component will be loaded here -->
@@ -330,6 +382,7 @@
             
             // Store global references
             window.dataModel = window.WidgetPlatform.getDataModel();
+            window.dataParser = new DataParser(); // Initialize DataParser instance
             window.stateManager = window.WidgetPlatform.getStateManager();
             window.dragDropManager = window.WidgetPlatform.getDragDropManager();
             
@@ -367,8 +420,95 @@
                 }
             });
             
-            document.getElementById('load-data')?.addEventListener('click', () => {
-                document.getElementById('csv-file-input')?.click();
+            document.getElementById('data-source-selector')?.addEventListener('change', async (e) => {
+                const filePath = e.target.value;
+                if (filePath) {
+                    console.log('🔄 Loading predefined dataset:', filePath);
+                    try {
+                        const response = await fetch(filePath);
+                        const csvContent = await response.text();
+                        console.log('📄 CSV content loaded, length:', csvContent.length);
+                        
+                        // Simuler un événement de fichier pour le parser existant
+                        const mockFile = new File([csvContent], filePath.split('/').pop(), { type: 'text/csv' });
+                        console.log('📁 Mock file created:', mockFile.name);
+                        
+                        // Déclencher le parsing via le système existant
+                        if (window.dataModel && window.dataParser) {
+                            console.log('🔧 DataModel and DataParser available');
+                            const parseResult = await window.dataParser.parseCSV(csvContent, mockFile.name);
+                            const fields = parseResult.fields; // parseCSV returns an object with fields property
+                            console.log('📊 Fields parsed:', fields.length, fields);
+                            
+                            const dataSourceInfo = {
+                                name: mockFile.name,
+                                fields: fields,
+                                recordCount: parseResult.dataSource.recordCount,
+                                size: csvContent.length,
+                                filePath: filePath,
+                                data: parseResult.data // Include the processed data
+                            };
+                            
+                            console.log('� DataSource info:', dataSourceInfo);
+                            
+                            window.dataModel.setActiveDataSource(dataSourceInfo);
+                            console.log('✅ Data source set in model');
+                            
+                            // Notifier tous les composants avec un délai pour être sûr
+                            setTimeout(() => {
+                                console.log('📚 Updating components...');
+                                console.log('🔍 Searching for components in DOM...');
+                                
+                                const availableObjects = document.querySelector('available-objects-panel');
+                                const feedingPanel = document.querySelector('feeding-panel');
+                                
+                                console.log('🔍 Components found:', {
+                                    availableObjects: !!availableObjects,
+                                    feedingPanel: !!feedingPanel,
+                                    availableObjectsHasUpdateFields: availableObjects && typeof availableObjects.updateFields === 'function',
+                                    feedingPanelHasUpdateFields: feedingPanel && typeof feedingPanel.updateFields === 'function'
+                                });
+                                
+                                if (availableObjects) {
+                                    console.log('📚 Available Objects Panel found, updating...');
+                                    availableObjects.updateFields(fields);
+                                    availableObjects.updateDataSource(window.dataModel.getActiveDataSource());
+                                    console.log('📚 Available Objects Panel updated');
+                                } else {
+                                    console.error('❌ Available Objects Panel not found');
+                                }
+                                
+                                if (feedingPanel) {
+                                    console.log('⚙️ Feeding Panel found, updating...');
+                                    if (typeof feedingPanel.updateFields === 'function') {
+                                        feedingPanel.updateFields(fields);
+                                        console.log('⚙️ Feeding Panel updated');
+                                    } else {
+                                        console.error('❌ Feeding Panel updateFields method not available');
+                                    }
+                                } else {
+                                    console.warn('⚠️ Feeding Panel not found');
+                                }
+                            }, 100);
+                        } else {
+                            console.error('❌ DataModel or DataParser not available:', {
+                                dataModel: !!window.dataModel,
+                                dataParser: !!window.dataParser
+                            });
+                        }
+                    } catch (error) {
+                        console.error('❌ Error loading dataset:', error);
+                        alert('Error loading dataset: ' + error.message);
+                    }
+                } else {
+                    console.log('🗑️ No dataset selected, clearing data');
+                    // Clear the data when no selection
+                    const availableObjects = document.querySelector('available-objects-panel');
+                    if (availableObjects) {
+                        availableObjects.updateFields([]);
+                        availableObjects.updateDataSource(null);
+                    }
+                }
             });
             
             document.getElementById('csv-file-input')?.addEventListener('change', async (event) => {

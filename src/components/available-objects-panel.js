@@ -33,11 +33,25 @@ class AvailableObjectsPanel extends HTMLElement {
         this.render();
         this.bindEvents();
         
-        // Subscribe to data model changes
-        if (this.dataModel) {
+        // Subscribe to data model changes with retry mechanism
+        this.setupDataModel();
+    }
+
+    setupDataModel() {
+        // Try to get dataModel immediately
+        if (window.dataModel) {
+            this.dataModel = window.dataModel;
             this.dataModel.on('dataSourceChanged', this.handleDataSourceChanged);
             this.dataModel.on('fieldsUpdated', this.handleFieldsUpdated);
             this.handleFieldsUpdated(this.dataModel.getFields());
+        } else {
+            // Retry after a short delay if dataModel is not ready
+            setTimeout(() => {
+                if (window.dataModel && !this.dataModel) {
+                    console.log('📚 Available Objects: DataModel found on retry');
+                    this.setupDataModel();
+                }
+            }, 100);
         }
     }
 
@@ -53,6 +67,35 @@ class AvailableObjectsPanel extends HTMLElement {
         this.render();
     }
 
+    // Public methods for external updates
+    updateFields(fields) {
+        console.log('📚 Available Objects Panel: updateFields called with', fields?.length, 'fields');
+        console.log('📚 Available Objects Panel: Current fields before update:', this.fields?.length);
+        this.fields = fields || [];
+        console.log('📚 Available Objects Panel: Fields after assignment:', this.fields?.length);
+        this.applyFilters();
+        console.log('📚 Available Objects Panel: About to render...');
+        this.render();
+        console.log('📚 Available Objects Panel: Render completed');
+    }
+
+    updateDataSource(dataSource) {
+        console.log('📚 Available Objects Panel: updateDataSource called with:', dataSource?.name || 'null');
+        
+        // Ensure we have the dataModel reference
+        if (!this.dataModel && window.dataModel) {
+            console.log('📚 Available Objects Panel: Setting dataModel reference');
+            this.dataModel = window.dataModel;
+        }
+        
+        console.log('📚 Available Objects Panel: DataModel available:', !!this.dataModel);
+        this.handleDataSourceChanged(dataSource);
+        // Force re-render to show metadata
+        console.log('📚 Available Objects Panel: About to render after dataSource update...');
+        this.render();
+        console.log('📚 Available Objects Panel: Render after dataSource update completed');
+    }
+
     applyFilters() {
         this.filteredFields = this.fields.filter(field => {
             if (this.searchTerm) {
@@ -66,6 +109,9 @@ class AvailableObjectsPanel extends HTMLElement {
     }
 
     render() {
+        console.log('📚 Available Objects Panel: render() called');
+        console.log('📚 Available Objects Panel: Current state - fields:', this.fields?.length, 'dataModel:', !!this.dataModel);
+        
         const style = `
             <style>
                 :host {
@@ -82,6 +128,60 @@ class AvailableObjectsPanel extends HTMLElement {
                     border-left: 1px solid var(--border-light, #1A2733);
                     overflow: hidden;
                     color: var(--text-primary, #EAECEE);
+                }
+                
+                .data-source-info {
+                    background: var(--background-secondary, #1A2733);
+                    border: 1px solid var(--border-light, #1A2733);
+                    border-radius: var(--radius-md, 8px);
+                    margin: var(--spacing-md, 16px);
+                    overflow: hidden;
+                }
+                
+                .info-header {
+                    background: var(--background-tertiary, #00144A);
+                    padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+                    display: flex;
+                    align-items: center;
+                    gap: var(--spacing-sm, 8px);
+                    border-bottom: 1px solid var(--border-light, #1A2733);
+                }
+                
+                .info-icon {
+                    font-size: 1.2em;
+                }
+                
+                .info-title {
+                    font-weight: 600;
+                    color: var(--text-primary, #EAECEE);
+                }
+                
+                .info-content {
+                    padding: var(--spacing-md, 16px);
+                }
+                
+                .info-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: var(--spacing-sm, 8px);
+                }
+                
+                .info-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: var(--spacing-xs, 4px) 0;
+                }
+                
+                .info-label {
+                    font-size: 0.85em;
+                    color: var(--text-secondary, #A9B4BE);
+                }
+                
+                .info-value {
+                    font-weight: 500;
+                    color: var(--text-primary, #EAECEE);
+                    font-size: 0.9em;
                 }
                 
                 .search-container {
@@ -134,7 +234,7 @@ class AvailableObjectsPanel extends HTMLElement {
                     align-items: center;
                     justify-content: space-between;
                     padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-                    background: var(--background-secondary, #1A2733);
+                    background: var(--background-primary, #12171C);
                     cursor: pointer;
                     user-select: none;
                     transition: background-color var(--transition-fast, 0.15s ease);
@@ -143,7 +243,7 @@ class AvailableObjectsPanel extends HTMLElement {
                 }
                 
                 .category-header:hover {
-                    background: var(--background-tertiary, #00144A);
+                    background: var(--background-secondary, #1A2733);
                 }
                 
                 .category-info {
@@ -172,6 +272,21 @@ class AvailableObjectsPanel extends HTMLElement {
                     text-align: center;
                 }
                 
+                .category-count.dimensions {
+                    background: var(--business-teal, #049f9a);
+                    color: white;
+                }
+                
+                .category-count.measures {
+                    background: var(--business-orange, #FF8C00);
+                    color: white;
+                }
+                
+                .category-count.calculated {
+                    background: var(--business-grey, #5b738b);
+                    color: white;
+                }
+                
                 .expand-icon {
                     transition: transform var(--transition-normal, 0.2s ease);
                     color: var(--text-secondary, #5b738b);
@@ -183,9 +298,10 @@ class AvailableObjectsPanel extends HTMLElement {
                 }
                 
                 .field-list {
-                    background: white;
+                    background: var(--background-primary, #12171C);
                     transition: max-height var(--transition-normal, 0.2s ease);
                     overflow: hidden;
+                    padding: var(--spacing-xs, 4px);
                 }
                 
                 .field-list.collapsed {
@@ -202,27 +318,56 @@ class AvailableObjectsPanel extends HTMLElement {
                     gap: var(--spacing-sm, 8px);
                     padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
                     cursor: grab;
-                    border-bottom: 1px solid var(--border-ultra-light, #f0f1f2);
+                    border-bottom: 1px solid var(--border-light, #1A2733);
                     transition: all var(--transition-fast, 0.15s ease);
                     position: relative;
-                    background: white;
+                    color: white;
+                    border-radius: 4px;
+                    margin: 2px 0;
+                }
+                
+                .field-item.dimension {
+                    background: #89D1FF;
+                }
+                
+                .field-item.measure {
+                    background: #FFC933;
+                    color: #333;
                 }
                 
                 .field-item:last-child {
                     border-bottom: none;
                 }
                 
-                .field-item:hover {
-                    background: var(--business-teal-ultra-light, #e6f4f4);
+                .field-item.dimension:hover {
+                    background: #1B90FF;
                     border-left: 3px solid var(--business-teal, #049f9a);
                     padding-left: calc(var(--spacing-md, 16px) - 3px);
                     transform: translateX(2px);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                }
+                
+                .field-item.measure:hover {
+                    background: #E76500;
+                    color: white;
+                    border-left: 3px solid var(--business-teal, #049f9a);
+                    padding-left: calc(var(--spacing-md, 16px) - 3px);
+                    transform: translateX(2px);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                 }
                 
                 .field-item:active {
                     cursor: grabbing;
                     transform: scale(0.98);
-                    background: var(--background-tertiary, #00144A);
+                }
+                
+                .field-item.dimension:active {
+                    background: #0070F2;
+                }
+                
+                .field-item.measure:active {
+                    background: #C35500;
+                    color: white;
                 }
                 
                 .field-item.dragging {
@@ -262,24 +407,44 @@ class AvailableObjectsPanel extends HTMLElement {
                 
                 .field-type {
                     font-size: 0.75em;
-                    color: var(--text-primary, #EAECEE);
-                    background: var(--background-secondary, #1A2733);
                     padding: 0.1rem 0.3rem;
                     border-radius: 3px;
-                    border: 1px solid var(--border-light, #1A2733);
+                    font-weight: 500;
+                }
+                
+                .field-item.dimension .field-type {
+                    color: #0070F2;
+                    background: white;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+                
+                .field-item.measure .field-type {
+                    color: white;
+                    background: #333;
+                    border: 1px solid rgba(0, 0, 0, 0.3);
                 }
                 
                 .field-cardinality {
                     font-size: 0.75em;
-                    color: var(--business-indigo, #7858ff);
-                    background: var(--business-indigo-light, #ddd5ff);
+                    color: white;
                     padding: 0.1rem 0.3rem;
                     border-radius: 3px;
                 }
                 
+                .field-item.dimension .field-cardinality {
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+                
+                .field-item.measure .field-cardinality {
+                    background: rgba(0, 0, 0, 0.2);
+                    color: #333;
+                    border: 1px solid rgba(0, 0, 0, 0.3);
+                }
+                
                 .field-source {
                     font-size: 0.75em;
-                    color: var(--business-teal, #049f9a);
+                    color: rgba(255, 255, 255, 0.8);
                     font-style: italic;
                 }
                 
@@ -335,11 +500,39 @@ class AvailableObjectsPanel extends HTMLElement {
                 
                 .summary-info {
                     padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-                    background: var(--business-blue-ultra-light, #f0f8ff);
-                    border-bottom: 1px solid var(--border-light, #eaecee);
-                    font-size: 0.8em;
-                    color: var(--text-secondary, #5b738b);
+                    background: var(--background-secondary, #1A2733);
+                    border-bottom: 1px solid var(--border-light, #1A2733);
+                    font-size: 0.85em;
+                    color: var(--text-primary, #EAECEE);
                     text-align: center;
+                    font-weight: 500;
+                    border-top: 2px solid var(--business-blue, #1B90FF);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: var(--spacing-xs, 4px);
+                }
+                
+                .summary-badge {
+                    padding: 0.2rem 0.5rem;
+                    border-radius: 12px;
+                    font-size: 0.8em;
+                    font-weight: 600;
+                    color: white;
+                }
+                
+                .summary-badge.dimensions {
+                    background: var(--business-teal, #049f9a);
+                }
+                
+                .summary-badge.measures {
+                    background: var(--business-orange, #FF8C00);
+                }
+                
+                .summary-separator {
+                    color: var(--text-secondary, #5b738b);
+                    font-weight: 300;
+                    margin: 0 var(--spacing-xs, 4px);
                 }
             </style>
         `;
@@ -360,7 +553,11 @@ class AvailableObjectsPanel extends HTMLElement {
             return this.renderLoadingState();
         }
 
+        const activeDataSource = this.dataModel.getActiveDataSource();
+
         return `
+            ${this.renderDataSourceInfo(activeDataSource)}
+            
             <div class="search-container">
                 <input type="text" 
                        class="search-box" 
@@ -382,9 +579,78 @@ class AvailableObjectsPanel extends HTMLElement {
         return `
             <div class="loading-state">
                 <div class="loading-icon">📊</div>
-                <div>No data source loaded</div>
+                <div>No data source selected</div>
                 <div style="font-size: 0.8em; margin-top: 8px;">
-                    Use the 📤 button to load CSV data
+                    Select a dataset from the dropdown above
+                </div>
+            </div>
+        `;
+    }
+
+    renderDataSourceInfo(dataSource) {
+        if (!dataSource) {
+            return `
+                <div class="data-source-info">
+                    <div class="info-header">
+                        <span class="info-icon">ℹ️</span>
+                        <span class="info-title">No Data Source</span>
+                    </div>
+                    <div class="info-content">
+                        <p>Select a dataset from the dropdown above to view metadata and available fields.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        const formatFileSize = (bytes) => {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+
+        const formatDate = (date) => {
+            return new Date(date).toLocaleString();
+        };
+
+        return `
+            <div class="data-source-info">
+                <div class="info-header">
+                    <span class="info-icon">📊</span>
+                    <span class="info-title">${dataSource.name}</span>
+                </div>
+                <div class="info-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Records:</span>
+                            <span class="info-value">${dataSource.recordCount.toLocaleString()}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Columns:</span>
+                            <span class="info-value">${dataSource.metadata?.columns || 0}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Dimensions:</span>
+                            <span class="info-value">${dataSource.metadata?.dimensions || 0}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Measures:</span>
+                            <span class="info-value">${dataSource.metadata?.measures || 0}</span>
+                        </div>
+                        ${dataSource.size ? `
+                        <div class="info-item">
+                            <span class="info-label">Size:</span>
+                            <span class="info-value">${formatFileSize(dataSource.size)}</span>
+                        </div>
+                        ` : ''}
+                        ${dataSource.loadedAt ? `
+                        <div class="info-item">
+                            <span class="info-label">Loaded:</span>
+                            <span class="info-value">${formatDate(dataSource.loadedAt)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -396,7 +662,9 @@ class AvailableObjectsPanel extends HTMLElement {
         
         return `
             <div class="summary-info">
-                ${dimensions.length} dimensions • ${measures.length} measures
+                <span class="summary-badge dimensions">${dimensions.length} dimensions</span>
+                <span class="summary-separator">•</span>
+                <span class="summary-badge measures">${measures.length} measures</span>
             </div>
         `;
     }
@@ -411,7 +679,7 @@ class AvailableObjectsPanel extends HTMLElement {
                     <div class="category-info">
                         <span class="category-icon">🏷️</span>
                         <span class="category-name">Dimensions</span>
-                        <span class="category-count">${dimensions.length}</span>
+                        <span class="category-count dimensions">${dimensions.length}</span>
                     </div>
                     <span class="expand-icon ${isExpanded ? 'expanded' : ''}">▲</span>
                 </div>
@@ -432,7 +700,7 @@ class AvailableObjectsPanel extends HTMLElement {
                     <div class="category-info">
                         <span class="category-icon">📊</span>
                         <span class="category-name">Measures</span>
-                        <span class="category-count">${measures.length}</span>
+                        <span class="category-count measures">${measures.length}</span>
                     </div>
                     <span class="expand-icon ${isExpanded ? 'expanded' : ''}">▲</span>
                 </div>
@@ -452,7 +720,7 @@ class AvailableObjectsPanel extends HTMLElement {
                     <div class="category-info">
                         <span class="category-icon">🧮</span>
                         <span class="category-name">Calculated Fields</span>
-                        <span class="category-count">0</span>
+                        <span class="category-count calculated">0</span>
                     </div>
                     <span class="expand-icon ${isExpanded ? 'expanded' : ''}">▲</span>
                 </div>
@@ -469,12 +737,15 @@ class AvailableObjectsPanel extends HTMLElement {
         }
 
         return fields.map(field => `
-            <div class="field-item" 
+            <div class="field-item ${field.category === 'DIMENSION' ? 'dimension' : 'measure'}" 
                  draggable="true"
                  data-field-id="${field.id}"
                  data-field-name="${field.name}"
+                 data-field-display-name="${field.displayName}"
                  data-field-category="${field.category}"
-                 data-field-type="${field.dataType}">
+                 data-field-type="${field.dataType}"
+                 data-field-cardinality="${field.cardinality}"
+                 data-field-source="${field.source}">
                 <span class="field-icon">${field.category === 'DIMENSION' ? '🏷️' : '📊'}</span>
                 <div class="field-info">
                     <div class="field-name" title="${field.displayName}">${field.displayName}</div>
@@ -537,9 +808,11 @@ class AvailableObjectsPanel extends HTMLElement {
         const fieldData = {
             id: fieldItem.dataset.fieldId,
             name: fieldItem.dataset.fieldName,
+            displayName: fieldItem.dataset.fieldDisplayName,
             category: fieldItem.dataset.fieldCategory,
             dataType: fieldItem.dataset.fieldType,
-            source: 'Available Objects'
+            cardinality: fieldItem.dataset.fieldCardinality,
+            source: fieldItem.dataset.fieldSource
         };
 
         e.dataTransfer.setData('application/json', JSON.stringify(fieldData));
@@ -555,7 +828,7 @@ class AvailableObjectsPanel extends HTMLElement {
             composed: true
         }));
 
-        console.log('📚 Drag started:', fieldData.name);
+        console.log('📚 Drag started:', fieldData.displayName);
     }
 
     handleDragEnd(e) {

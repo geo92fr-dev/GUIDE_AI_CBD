@@ -1,0 +1,16 @@
+Customer_ID,Segment,Country,City,Order_Date,Product_Category,Product_Name,Quantity,Unit_Price,Total_Sales,Discount,Shipping_Cost,Customer_Age,Satisfaction_Rating
+CUST001,Consumer,France,Paris,2024-01-15,Technology,Laptop Pro 15,1,1299.99,1299.99,0.1,25.00,34,4.5
+CUST002,Corporate,Germany,Berlin,2024-01-18,Office Supplies,Ergonomic Chair,2,245.50,491.00,0.15,35.00,42,4.2
+CUST003,Home Office,Spain,Madrid,2024-01-22,Technology,Wireless Mouse,3,29.99,89.97,0.05,8.50,28,4.7
+CUST001,Consumer,France,Paris,2024-02-05,Furniture,Standing Desk,1,399.99,399.99,0.12,45.00,34,4.3
+CUST004,Corporate,Italy,Rome,2024-02-10,Technology,Monitor 27inch,4,189.99,759.96,0.20,52.00,38,4.4
+CUST005,Consumer,UK,London,2024-02-14,Office Supplies,Notebook Set,5,12.99,64.95,0.08,15.00,31,4.1
+CUST006,Home Office,Netherlands,Amsterdam,2024-02-18,Technology,Keyboard Mechanical,1,89.99,89.99,0.00,12.00,29,4.8
+CUST002,Corporate,Germany,Berlin,2024-03-02,Furniture,Conference Table,1,899.99,899.99,0.18,75.00,42,4.0
+CUST007,Consumer,Belgium,Brussels,2024-03-08,Technology,Tablet 10inch,2,299.99,599.98,0.10,28.00,35,4.6
+CUST003,Home Office,Spain,Madrid,2024-03-15,Office Supplies,Printer Laser,1,159.99,159.99,0.07,22.00,28,4.3
+CUST008,Corporate,Switzerland,Zurich,2024-03-20,Technology,Smartphone Pro,3,699.99,2099.97,0.25,45.00,45,4.5
+CUST009,Consumer,Austria,Vienna,2024-03-25,Furniture,Office Chair Premium,1,449.99,449.99,0.14,38.00,39,4.2
+CUST004,Corporate,Italy,Rome,2024-04-01,Office Supplies,Whiteboard Large,2,89.99,179.98,0.12,32.00,38,4.4
+CUST010,Home Office,Portugal,Lisbon,2024-04-05,Technology,Webcam HD,1,79.99,79.99,0.05,18.00,32,4.7
+CUST005,Consumer,UK,London,2024-04-12,Furniture,Bookshelf Modern,1,199.99,199.99,0.09,28.00,31,4.1

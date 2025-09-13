@@ -1,0 +1,25 @@
+Region,Product_Category,Sales_Rep,Quarter,Revenue,Units_Sold,Customer_Satisfaction,Market_Share
+North,Electronics,Alice Johnson,Q1,125000,450,4.2,15.8
+North,Electronics,Alice Johnson,Q2,138000,489,4.3,16.2
+North,Electronics,Alice Johnson,Q3,142000,502,4.1,16.5
+North,Electronics,Alice Johnson,Q4,155000,547,4.4,17.1
+South,Electronics,Bob Smith,Q1,98000,356,4.0,12.3
+South,Electronics,Bob Smith,Q2,105000,378,4.1,12.8
+South,Electronics,Bob Smith,Q3,112000,401,4.2,13.2
+South,Electronics,Bob Smith,Q4,118000,418,4.3,13.6
+East,Clothing,Carol Davis,Q1,78000,1200,3.9,8.7
+East,Clothing,Carol Davis,Q2,82000,1280,4.0,8.9
+East,Clothing,Carol Davis,Q3,85000,1320,4.1,9.1
+East,Clothing,Carol Davis,Q4,89000,1380,4.2,9.4
+West,Clothing,David Wilson,Q1,71000,1150,3.8,8.2
+West,Clothing,David Wilson,Q2,74000,1200,3.9,8.4
+West,Clothing,David Wilson,Q3,77000,1250,4.0,8.6
+West,Clothing,David Wilson,Q4,80000,1300,4.1,8.8
+North,Home_Garden,Eva Brown,Q1,92000,320,4.3,11.5
+North,Home_Garden,Eva Brown,Q2,96000,335,4.4,11.8
+North,Home_Garden,Eva Brown,Q3,99000,348,4.2,12.1
+North,Home_Garden,Eva Brown,Q4,103000,362,4.5,12.4
+South,Home_Garden,Frank Miller,Q1,87000,305,4.1,10.9
+South,Home_Garden,Frank Miller,Q2,90000,318,4.2,11.2
+South,Home_Garden,Frank Miller,Q3,93000,331,4.3,11.5
+South,Home_Garden,Frank Miller,Q4,97000,344,4.4,11.8

@@ -48,21 +48,50 @@ class DataModel {
 
     /**
      * Set active data source
-     * @param {string} dataSourceId - Data source ID
+     * @param {string|Object} dataSourceIdOrObject - Data source ID or complete data source object
      */
-    setActiveDataSource(dataSourceId) {
-        if (!this.dataSources.has(dataSourceId)) {
-            throw new Error(`Data source ${dataSourceId} not found`);
+    setActiveDataSource(dataSourceIdOrObject) {
+        let dataSourceId, activeSource;
+        
+        if (typeof dataSourceIdOrObject === 'string') {
+            // Traditional ID-based lookup
+            dataSourceId = dataSourceIdOrObject;
+            if (!this.dataSources.has(dataSourceId)) {
+                throw new Error(`Data source ${dataSourceId} not found`);
+            }
+            activeSource = this.dataSources.get(dataSourceId);
+        } else {
+            // Direct data source object (new approach for predefined datasets)
+            const dataSource = dataSourceIdOrObject;
+            dataSourceId = dataSource.name || dataSource.filePath || 'unknown';
+            
+                // Store enhanced data source with metadata
+                activeSource = {
+                    source: {
+                        id: dataSourceId,
+                        name: dataSource.name,
+                        recordCount: dataSource.recordCount || 0,
+                        size: dataSource.size || 0,
+                        filePath: dataSource.filePath,
+                        loadedAt: new Date(),
+                        metadata: {
+                            columns: dataSource.fields ? dataSource.fields.length : 0,
+                            dimensions: dataSource.fields ? dataSource.fields.filter(f => f.category === 'DIMENSION').length : 0,
+                            measures: dataSource.fields ? dataSource.fields.filter(f => f.category === 'MEASURE').length : 0
+                        }
+                    },
+                    fields: dataSource.fields || [],
+                    data: dataSource.data || []
+                };            this.dataSources.set(dataSourceId, activeSource);
         }
         
         this.activeDataSource = dataSourceId;
-        const activeSource = this.dataSources.get(dataSourceId);
-        
         this.fields = activeSource.fields;
         this.data = activeSource.data;
         
         console.log('✅ Active data source changed to:', activeSource.source.name);
-        this.emit('dataSourceChanged', activeSource);
+        console.log('📊 Metadata:', activeSource.source.metadata);
+        this.emit('dataSourceChanged', activeSource.source);
         this.emit('fieldsUpdated', this.fields);
     }
 
@@ -108,6 +137,25 @@ class DataModel {
         return this.fields.find(field => 
             field.id === identifier || field.name === identifier
         );
+    }
+
+    /**
+     * Get active data source metadata
+     * @returns {Object|null} Active data source info
+     */
+    getActiveDataSource() {
+        if (!this.activeDataSource) return null;
+        
+        const activeSource = this.dataSources.get(this.activeDataSource);
+        return activeSource ? activeSource.source : null;
+    }
+
+    /**
+     * Get all available data sources
+     * @returns {Array} List of all data sources
+     */
+    getAllDataSources() {
+        return Array.from(this.dataSources.values()).map(ds => ds.source);
     }
 
     /**
