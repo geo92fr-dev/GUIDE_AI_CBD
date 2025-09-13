@@ -16,12 +16,12 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Gather metrics and update METRICS.md
+      - name: Gather metrics and update CBD_METRICS.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          node -e "
+          node - <<'NODE'
           const https = require('https');
           const fs = require('fs');
           const repo = process.env.REPO;
@@ -63,7 +63,8 @@ jobs:
               console.error(e); process.exit(1);
             }
           })();
-        
+          NODE
+
       - name: Commit metrics
         run: |
           git config user.name "github-actions[bot]"
