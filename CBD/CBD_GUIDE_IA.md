@@ -619,11 +619,34 @@ Centraliser savoir tacite pour réduire re-travail et accélérer résolution.
 ### 📄 Fichiers recommandés
 | Fichier | Rôle |
 |---------|------|
+| `AGENTS.md` | Contexte et instructions pour agents IA |
 | `KNOWN_ISSUES.md` | Liste problèmes connus + statut |
 | `ERROR_PATTERNS.md` | Patterns d'erreurs récurrentes + prévention |
 | `CBD_PROMPTS_EXAMPLES.md` | Exemples prompts validés (anonymisés) |
 | `CBD_TECH_DEBT.md` | Backlog dette technique priorisée |
 | `CBD_DECISIONS.md` | Journal décisions structurantes |
+
+### 🤖 Fichier AGENTS.md - Contexte pour IA
+
+**Nouveau depuis VS Code** : Un fichier `AGENTS.md` placé à la racine du workspace permet de fournir automatiquement du contexte et des instructions aux agents IA.
+
+#### 📋 Avantages
+- **Contexte automatique** : Pris en compte automatiquement lors des demandes de chat
+- **Équipes multi-agents** : Utile pour les équipes utilisant plusieurs agents IA
+- **Standardisation** : Instructions cohérentes pour tous les agents
+
+#### ⚙️ Configuration
+- **Activé par défaut** : Support automatique des fichiers AGENTS.md
+- **Contrôle via setting** : `chat.useAgentsMdFile` pour activer/désactiver
+- **Documentation** : Voir https://agents.md/ pour plus d'informations
+
+#### 💡 Usage recommandé CBD
+Inclure dans `AGENTS.md` :
+- Standards de code du projet
+- Conventions de nommage
+- Patterns architecturaux spécifiques
+- Règles de validation préférées
+- Contexte métier du projet
 
 ### 🧩 Structure `KNOWN_ISSUES.md`
 `ID | Zone | Symptôme | Impact | Workaround | Fix cible | Statut`
