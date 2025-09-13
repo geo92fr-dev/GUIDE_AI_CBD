@@ -1,3 +1,4 @@
+```markdown
 # FEEDBACK_LOG - Journal de feedback
 
 Format: `YYYY-MM-DD HH:MM | Phase | Type demande | Score Clarté=X | Pertinence=Y | Justif=Z | Risque=R | Action suivie`
@@ -8,4 +9,7 @@ Exemple:
 
 Usage:
 - Capturer rapidement après interaction.
+- Utiliser pour ajuster `PROMPTS_EXAMPLES.md` et `GUIDE_AI_CBD.md` si patterns apparaissent.
 - Utiliser pour ajuster `CBD_PROMPTS_EXAMPLES.md` et `CBD_GUIDE_AI_CBD.md` si patterns apparaissent.
+
+```

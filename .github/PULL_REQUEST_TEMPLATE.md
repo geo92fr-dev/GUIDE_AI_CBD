@@ -14,8 +14,8 @@
 - [ ] I wrote or updated tests (TDD: RED → GREEN → REFACTOR)
 - [ ] All tests pass locally
 - [ ] No secrets or credentials in the diff
-- [ ] I updated `DECISIONS.md` when relevant
-- [ ] I updated `GUIDE_AI_CBD.md` TOC or content if this change adds a new guide section
+- [ ] I updated `CBD_DECISIONS.md` when relevant
+- [ ] I updated `CBD_GUIDE_AI_CBD.md` TOC or content if this change adds a new guide section
 - [ ] I added a short description in `README.md` if relevant
 
 ## Files changed

@@ -80,7 +80,7 @@ Assurer une collaboration structurée, traçable et prévisible entre l'utilisat
 | 2 | Solide | Audit léger code + exécution tests |
 | 3 | Standard | Acceptation rapide si tests OK |
 
-### 📝 Decision Log (suggestion fichier `DECISIONS.md`)
+### 📝 Decision Log (suggestion fichier `CBD_DECISIONS.md`)
 Format entrée : `YYYY-MM-DD | Zone | Décision | Raison | Alternatives rejetées | Impact`.
 
 ### 🚨 Escalation / Stop
@@ -193,7 +193,7 @@ Phase 0 - Étape 0.7 : Test échoue sur formatDate
 - Nombre moyen de clarifications par prompt (< 1.5)
 
 ### 🚀 Amélioration continue
-Ajouter exemples réels anonymisés dans `PROMPTS_EXAMPLES.md`.
+Ajouter exemples réels anonymisés dans `CBD_PROMPTS_EXAMPLES.md`.
 
 ---
 
@@ -206,7 +206,7 @@ Boucler amélioration continue via retours structurés et mesures quantitatives.
 1. Réponse AI fournie.
 2. Utilisateur évalue (Clarté / Pertinence / Justification / Risque) 0–2.
 3. Si score moyen < 1.2 → AI reformule / demande clarification.
-4. Ajustement consigné (optionnel) dans `FEEDBACK_LOG.md`.
+4. Ajustement consigné (optionnel) dans `CBD_FEEDBACK_LOG.md`.
 
 ### 🗂️ Format entrée feedback
 `YYYY-MM-DD HH:MM | Phase | Type demande | Score Clarté=X | Pertinence=Y | Justif=Z | Risque perçu=R | Action suivie`
@@ -443,7 +443,7 @@ export function formatUsername(v: string){return v.trim().toLowerCase();}
 ### 🎯 Objectif
 Empêcher l'accumulation de dette technique en rendant visible, priorisée et traitée de façon incrémentale.
 
-### 🧾 Backlog de dette (fichier suggéré `TECH_DEBT.md`)
+### 🧾 Backlog de dette (fichier suggéré `CBD_TECH_DEBT.md`)
 Format entrée : `Zone | Problème | Impact | Effort (S/M/L) | Priorité (1-3) | Status`.
 
 ### 🔍 Sources de détection
@@ -621,9 +621,9 @@ Centraliser savoir tacite pour réduire re-travail et accélérer résolution.
 |---------|------|
 | `KNOWN_ISSUES.md` | Liste problèmes connus + statut |
 | `ERROR_PATTERNS.md` | Patterns d'erreurs récurrentes + prévention |
-| `PROMPTS_EXAMPLES.md` | Exemples prompts validés (anonymisés) |
-| `TECH_DEBT.md` | Backlog dette technique priorisée |
-| `DECISIONS.md` | Journal décisions structurantes |
+| `CBD_PROMPTS_EXAMPLES.md` | Exemples prompts validés (anonymisés) |
+| `CBD_TECH_DEBT.md` | Backlog dette technique priorisée |
+| `CBD_DECISIONS.md` | Journal décisions structurantes |
 
 ### 🧩 Structure `KNOWN_ISSUES.md`
 `ID | Zone | Symptôme | Impact | Workaround | Fix cible | Statut`

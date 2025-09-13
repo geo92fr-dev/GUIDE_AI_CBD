@@ -1,3 +1,4 @@
+```markdown
 # PROMPTS_EXAMPLES - Exemples anonymisés de prompts
 
 Ce fichier contient des templates de prompts validés (anonymisés) que vous pouvez adapter pour accélérer les interactions avec l'IA en respectant la structure recommandée du GUIDE_AI_CBD.
@@ -92,3 +93,5 @@ Phase <X> - <Étape>
 ---
 
 Contribuez en ajoutant d'autres prompts anonymisés dans ce fichier lorsque vous trouvez une formulation performant bien adaptée à votre workflow.
+
+```

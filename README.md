@@ -1,10 +1,10 @@
 # GUIDE_AI_CBD
 
-Repository containing the `GUIDE_AI_CBD.md` guide: a living document for optimized Human ↔ AI collaboration (Check Before Doing).
+Repository containing the `CBD_GUIDE_AI_CBD.md` guide: a living document for optimized Human ↔ AI collaboration (Check Before Doing).
 
 How to view locally:
 
-- Open `GUIDE_AI_CBD.md` in your editor (VS Code supports Markdown preview).
+- Open `CBD_GUIDE_AI_CBD.md` in your editor (VS Code supports Markdown preview).
 - To render Mermaid diagrams in VS Code, install a Merlin/Markdown preview extension that supports Mermaid.
 
 Notes:

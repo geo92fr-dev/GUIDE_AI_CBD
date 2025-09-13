@@ -25,4 +25,4 @@ Small / Medium / Large
 
 ---
 
-Filling this template will populate `TECH_DEBT.md` during triage.
+Filling this template will populate `CBD_TECH_DEBT.md` during triage.
