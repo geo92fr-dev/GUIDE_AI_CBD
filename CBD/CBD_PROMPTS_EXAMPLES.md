@@ -73,8 +73,8 @@ Phase Y - Ajouter tests pour `calculateTotal`
 
 Phase Z - Mise à jour docs
 
-[OBJECTIF] Ajouter section dans `CBD_GUIDE_AI_CBD.md` décrivant l'usage d'une nouvelle fonctionnalité
-[FILE] CBD_GUIDE_AI_CBD.md
+[OBJECTIF] Ajouter section dans `CBD/CBD_GUIDE_IA.md` décrivant l'usage d'une nouvelle fonctionnalité
+[FILE] CBD/CBD_GUIDE_IA.md
 [TEST] Aucune commande; vérification visuelle + validation PR
 [CHECK] Section presence + lien TOC mis à jour
 

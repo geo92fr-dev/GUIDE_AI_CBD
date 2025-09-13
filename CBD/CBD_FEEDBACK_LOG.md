@@ -9,6 +9,6 @@ Exemple:
 
 Usage:
 - Capturer rapidement après interaction.
-- Utiliser pour ajuster `CBD_PROMPTS_EXAMPLES.md` et `CBD_GUIDE_AI_CBD.md` si patterns apparaissent.
+- Utiliser pour ajuster `CBD/CBD_PROMPTS_EXAMPLES.md` et `CBD/CBD_GUIDE_IA.md` si patterns apparaissent.
 
 ```
