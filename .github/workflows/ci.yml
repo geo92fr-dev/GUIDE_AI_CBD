@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Detect package.json
+        id: pkg
+        run: |
+          if [ -f package.json ]; then echo "has_package=true" >> $GITHUB_OUTPUT; else echo "has_package=false" >> $GITHUB_OUTPUT; fi
+
+      - name: Install dependencies (if present)
+        if: steps.pkg.outputs.has_package == 'true'
+        run: |
+          npm ci
+
+      - name: Run unit tests (if configured)
+        if: steps.pkg.outputs.has_package == 'true' && contains(fromJson(needs.build.outputs || '[]'), '') == false
+        run: |
+          if npm run | grep -q "test"; then npm test --silent || exit 1; else echo "No test script defined"; fi
+
+      - name: Markdown lint
+        uses: reviewdog/action-markdownlint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
