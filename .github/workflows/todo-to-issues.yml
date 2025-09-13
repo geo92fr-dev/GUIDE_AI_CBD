@@ -1,0 +1,33 @@
+name: TODO -> Tech Debt Issues
+
+on:
+  schedule:
+    - cron: '0 7 * * 1' # weekly on Monday 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find TODOs and open issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Scanning for TODO: tech-debt markers..."
+          TODOs=$(git grep -n "TODO.*tech-debt" || true)
+          if [ -z "$TODOs" ]; then echo "No TODO tech-debt markers found."; exit 0; fi
+          while IFS= read -r line; do
+            file=$(echo "$line" | cut -d: -f1)
+            lineno=$(echo "$line" | cut -d: -f2)
+            text=$(echo "$line" | cut -d: -f3-)
+            title="TD: ${file}:${lineno} ${text:0:60}"
+            body="Detected TODO tech-debt in $file at line $lineno:\n\n$text\n\nPlease triage and assign priority."
+            # check for existing open issues with same title
+            exists=$(gh issue list --repo $REPO --state open --search "$title" --json number || true)
+            if [ -n "$exists" ]; then echo "Issue already exists for $title"; continue; fi
+            gh issue create --repo $REPO --title "$title" --body "$body" --label tech-debt || echo "Failed to create issue for $title"
+          done <<< "$TODOs"
