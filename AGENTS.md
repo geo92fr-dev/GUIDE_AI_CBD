@@ -42,7 +42,7 @@ Ce projet utilise le framework **CBD (Check-Before-Doing)** pour optimiser la co
 ### Qualité & Tests
 - **Approche TDD**: Red → Green → Refactor quand applicable
 - **Validation**: Toujours tester les modifications critiques
-- **Métriques**: Suivre les indicateurs dans `CBD/CBD_METRICS.md`
+- **Documentation**: Suivre les standards dans le guide CBD
 
 ## 🎯 Rôles et Responsabilités
 
