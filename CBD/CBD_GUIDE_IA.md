@@ -1,7 +1,7 @@
 # 🤖 GUIDE_AI_CBD - Check Before Doing
 
 > **GUIDE_AI_CBD : Guide de collaboration optimisée Humain ↔ IA (Projet Générique)**  
-> Version: 1.15 | Date: 13/09/2025
+> Version: 1.0 (Release CBD_v1.0) | Date: 13/09/2025
 
 ## 🗂️ Sommaire
 
