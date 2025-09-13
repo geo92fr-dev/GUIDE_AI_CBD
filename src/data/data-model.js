@@ -287,20 +287,46 @@ class DataModel {
      * @returns {Array} Data prepared for widget
      */
     getDataForBinding(binding) {
+        console.log('🔍 DataModel.getDataForBinding called with:', binding);
+        
         if (!binding || (!binding.dimensions && !binding.measures)) {
+            console.log('⚠️ DataModel: No binding or empty dimensions/measures');
             return [];
         }
         
         const dimensions = binding.dimensions || [];
         const measures = binding.measures || [];
         
-        // Prepare measure configurations with aggregation
-        const measureConfigs = measures.map(measure => ({
-            field: typeof measure === 'string' ? measure : measure.field,
-            aggregation: typeof measure === 'object' ? measure.aggregation : 'SUM'
-        }));
+        console.log('🔍 DataModel: Extracted dimensions:', dimensions);
+        console.log('🔍 DataModel: Extracted measures:', measures);
         
-        return this.aggregateData(dimensions, measureConfigs);
+        // Prepare measure configurations with aggregation
+        const measureConfigs = measures.map(measure => {
+            console.log('🔍 Processing measure:', measure);
+            const config = {
+                field: typeof measure === 'string' ? measure : (measure.field || measure.fieldId || measure.name),
+                aggregation: typeof measure === 'object' ? measure.aggregation : 'SUM'
+            };
+            console.log('🔍 Measure config:', config);
+            return config;
+        });
+        
+        // Also prepare dimension field names properly
+        const dimensionFields = dimensions.map(dim => {
+            console.log('🔍 Processing dimension:', dim);
+            const field = typeof dim === 'string' ? dim : (dim.field || dim.fieldId || dim.name);
+            console.log('🔍 Dimension field:', field);
+            return field;
+        });
+        
+        console.log('🔍 DataModel: Final dimension fields:', dimensionFields);
+        console.log('🔍 DataModel: Final measure configs:', measureConfigs);
+        console.log('🔍 DataModel: Available data sample:', this.data.slice(0, 2));
+        
+        const result = this.aggregateData(dimensionFields, measureConfigs);
+        console.log('🔍 DataModel: Aggregation result:', result);
+        
+        return result;
     }
 
     /**

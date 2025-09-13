@@ -673,6 +673,9 @@ class FeedingPanel extends HTMLElement {
                     eventTarget: e.target.value,
                     options: Array.from(e.target.options).map(opt => ({ value: opt.value, text: opt.text, selected: opt.selected }))
                 });
+                
+                // Charger les données de l'entité sélectionnée
+                this.loadSelectedEntityData();
             });
         }
 
@@ -1012,6 +1015,11 @@ class FeedingPanel extends HTMLElement {
             
             // Force sync combo box value after render
             this.syncWidgetSelector();
+            
+            // Load data for the selected widget (if any)
+            if (this.selectedWidget) {
+                this.loadSelectedEntityData();
+            }
         } else {
             console.log('⚙️ Feeding Panel: Canvas not found or getEntities method missing');
             console.log('⚙️ Feeding Panel: Available elements:', Array.from(document.querySelectorAll('dashboard-canvas-entity')));
@@ -1033,6 +1041,46 @@ class FeedingPanel extends HTMLElement {
      */
     updateAvailableWidgets() {
         this.updateCanvasWidgets();
+    }
+
+    /**
+     * Load data from the currently selected entity
+     */
+    loadSelectedEntityData() {
+        if (!this.selectedWidget) {
+            console.log('⚙️ Feeding Panel: No widget selected, clearing assignments');
+            this.clearAssignments();
+            return;
+        }
+
+        // Find the selected entity in canvas widgets
+        const selectedEntity = this.canvasWidgets.find(widget => widget.id === this.selectedWidget);
+        
+        if (!selectedEntity) {
+            console.warn('⚠️ Feeding Panel: Selected widget not found in canvas:', this.selectedWidget);
+            console.log('⚙️ Feeding Panel: Available widget IDs:', this.canvasWidgets.map(w => w.id));
+            this.clearAssignments();
+            return;
+        }
+
+        console.log('📊 Feeding Panel: Loading data for entity:', selectedEntity.id, selectedEntity);
+
+        // Load entity's dataBinding into assignments
+        const dataBinding = selectedEntity.dataBinding || {};
+        this.assignments = {
+            dimensions: [...(dataBinding.dimensions || [])],
+            measures: [...(dataBinding.measures || [])],
+            filters: [...(dataBinding.filters || [])]
+        };
+
+        // Clear editing widget reference since we're selecting manually
+        this.editingWidget = null;
+
+        console.log('✅ Feeding Panel: Loaded assignments for entity:', selectedEntity.id);
+        console.log('📊 Feeding Panel: Assignments loaded:', this.assignments);
+
+        // Re-render to show the loaded data
+        this.render();
     }
 
     applyDataToWidget() {

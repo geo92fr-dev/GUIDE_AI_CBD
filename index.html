@@ -280,6 +280,8 @@
                 <button class="btn-header" id="save-dashboard">💾 Save</button>
                 <button class="btn-header" id="load-dashboard">📂 Load</button>
                 <button class="btn-header" id="export-dashboard">📤 Export</button>
+                <button class="btn-header" id="toggle-all-view">👁️ View All</button>
+                <button class="btn-header" id="toggle-all-info">ℹ️ Info All</button>
                 <button class="btn-header" id="help-toggle">❓ Help</button>
             </div>
         </header>
@@ -366,7 +368,10 @@
     <script src="src/entity-system-loader.js"></script>
     
     <!-- Web Components -->
+    <script src="src/core/widget-manager.js"></script>
     <script src="src/components/widget-library.js"></script>
+    <script src="src/components/widget-view-toggle.js"></script>
+    <script src="src/renderers/widget-dual-mode-renderer.js"></script>
     <script src="src/components/dashboard-canvas-entity.js"></script>
     <script src="src/components/feeding-panel.js"></script>
     <script src="src/components/available-objects-panel.js"></script>
@@ -388,6 +393,21 @@
             
             // Initialize Unified Widget Platform
             window.WidgetPlatform.init();
+            
+            // Auto-load unified widgets for toggle functionality
+            setTimeout(async () => {
+                try {
+                    console.log('🔄 Loading unified widgets for toggle functionality...');
+                    const canvas = document.querySelector('dashboard-canvas-entity');
+                    if (canvas && canvas.widgetManager) {
+                        // Load bar chart unified widget
+                        await canvas.widgetManager.loadUnifiedWidget('src/widgets/bar-chart-widget-unified.js');
+                        console.log('✅ Unified widgets loaded successfully');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not load unified widgets:', error.message);
+                }
+            }, 1000);
             
             // Store global references
             window.dataModel = window.WidgetPlatform.getDataModel();
@@ -412,7 +432,7 @@
             });
             
             document.getElementById('help-toggle')?.addEventListener('click', () => {
-                alert('📖 WIDGETS Platform MVP v1.0\\n\\n1. Load CSV data using the 📤 button\\n2. Drag & drop fields to configure widgets\\n3. Build your dashboard!\\n\\nWebI-compatible workflow for easy adoption.');
+                alert('📖 WIDGETS Platform MVP v1.0\\n\\n🔄 NEW: View/Info Toggle!\\n• Each widget has a toggle button to switch between View and Info modes\\n• View mode: See the actual widget rendering\\n• Info mode: See widget metadata and configuration\\n• Use "👁️ View All" / "ℹ️ Info All" to toggle all widgets at once\\n\\n📋 Basic Usage:\\n1. Load CSV data using the 📤 button\\n2. Drag & drop fields to configure widgets\\n3. Build your dashboard!\\n4. Toggle between View and Info modes\\n\\nWebI-compatible workflow for easy adoption.');
             });
             
             document.getElementById('clear-widgets')?.addEventListener('click', () => {
@@ -426,6 +446,39 @@
                 const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
                 if (dashboardCanvas && typeof dashboardCanvas.exportCanvas === 'function') {
                     dashboardCanvas.exportCanvas();
+                }
+            });
+
+            // Widget View Toggle Controls
+            document.getElementById('toggle-all-view')?.addEventListener('click', () => {
+                console.log('👁️ Switching all widgets to View mode');
+                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
+                if (dashboardCanvas) {
+                    const toggles = dashboardCanvas.shadowRoot?.querySelectorAll('widget-view-toggle');
+                    if (toggles) {
+                        toggles.forEach(toggle => {
+                            if (!toggle.isViewMode) {
+                                toggle.enableViewMode();
+                            }
+                        });
+                        console.log(`✅ ${toggles.length} widgets switched to View mode`);
+                    }
+                }
+            });
+
+            document.getElementById('toggle-all-info')?.addEventListener('click', () => {
+                console.log('ℹ️ Switching all widgets to Info mode');
+                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
+                if (dashboardCanvas) {
+                    const toggles = dashboardCanvas.shadowRoot?.querySelectorAll('widget-view-toggle');
+                    if (toggles) {
+                        toggles.forEach(toggle => {
+                            if (toggle.isViewMode) {
+                                toggle.enableInfoMode();
+                            }
+                        });
+                        console.log(`✅ ${toggles.length} widgets switched to Info mode`);
+                    }
                 }
             });
             

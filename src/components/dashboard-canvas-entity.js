@@ -17,6 +17,7 @@ class DashboardCanvasEntity extends HTMLElement {
         this.entities = [];  // Array of WidgetEntity instances
         this.widgetManager = null;  // Will be initialized
         this.entityRenderer = null;  // Will be initialized
+        this.dualModeRenderer = null;  // Dual mode renderer for View/Info toggle
         this.gridColumns = 12;
         this.gridGap = 16;
         this.eventsInitialized = false;  // Track event binding
@@ -52,6 +53,14 @@ class DashboardCanvasEntity extends HTMLElement {
                 console.log('✅ Canvas: EntityRenderer initialized');
             } else {
                 console.warn('⚠️ Canvas: EntityRenderer not available, falling back to simple mode');
+            }
+            
+            // Initialize DualModeRenderer
+            if (typeof WidgetDualModeRenderer !== 'undefined') {
+                this.dualModeRenderer = new WidgetDualModeRenderer();
+                console.log('✅ Canvas: DualModeRenderer initialized');
+            } else {
+                console.warn('⚠️ Canvas: DualModeRenderer not available');
             }
             
             // Load existing entities
@@ -196,6 +205,15 @@ class DashboardCanvasEntity extends HTMLElement {
                     gap: var(--spacing-xs, 4px);
                     opacity: 0;
                     transition: opacity var(--transition-fast, 0.15s ease);
+                }
+                
+                .widget-container:hover .widget-actions,
+                .entity-container:hover .widget-actions {
+                    opacity: 1;
+                }
+                
+                .widget-view-toggle {
+                    margin-right: 8px;
                 }
                 
                 .widget-container:hover .widget-actions,
@@ -367,6 +385,225 @@ class DashboardCanvasEntity extends HTMLElement {
         this.renderEntitiesAsync();
     }
 
+    /**
+     * Render only the DOM structure without async entity rendering
+     */
+    renderSyncOnly() {
+        const style = `
+            <style>
+                :host {
+                    display: block;
+                    height: 100%;
+                    font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+                }
+                
+                .canvas-container {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                    background: var(--background-secondary, #1A2733);
+                    overflow: hidden;
+                    color: var(--text-primary, #EAECEE);
+                    transition: all var(--transition-fast, 0.15s ease);
+                }
+                
+                .canvas-content {
+                    flex: 1;
+                    overflow: auto;
+                    padding: var(--spacing-md, 16px);
+                }
+                
+                .widgets-grid {
+                    display: grid;
+                    grid-template-columns: repeat(12, 1fr);
+                    gap: var(--spacing-md, 16px);
+                    min-height: 100%;
+                }
+                
+                .empty-canvas {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    color: var(--text-secondary, #A9B4BE);
+                    text-align: center;
+                    padding: var(--spacing-xl, 32px);
+                }
+                
+                .empty-canvas-icon {
+                    font-size: 4rem;
+                    margin-bottom: var(--spacing-lg, 24px);
+                    opacity: 0.5;
+                }
+                
+                .entity-container, .widget-container {
+                    background: var(--background-primary, #12171C);
+                    border: 1px solid var(--border-light, #1A2733);
+                    border-radius: var(--radius-md, 8px);
+                    overflow: hidden;
+                    transition: all var(--transition-fast, 0.15s ease);
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 200px;
+                }
+                
+                .widget-container:hover, .entity-container:hover {
+                    box-shadow: 0 4px 12px rgba(27, 144, 255, 0.2);
+                    transform: translateY(-1px);
+                    border-color: var(--business-blue, #1B90FF);
+                }
+                
+                .widget-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+                    background: var(--background-tertiary, #00144A);
+                    border-bottom: 1px solid var(--border-light, #1A2733);
+                    min-height: 40px;
+                    color: var(--text-primary, #EAECEE);
+                }
+                
+                .widget-title {
+                    display: flex;
+                    align-items: center;
+                    gap: var(--spacing-xs, 4px);
+                    font-weight: 500;
+                    color: var(--text-primary, #EAECEE);
+                    font-size: 0.9em;
+                }
+                
+                .widget-type-icon {
+                    font-size: 1.1em;
+                }
+
+                .widget-id-label {
+                    font-size: 0.8em;
+                    font-weight: 600;
+                    color: #00144A;
+                    background: #D1EFFF;
+                    padding: 3px 8px;
+                    border-radius: 12px;
+                    margin-left: auto;
+                    font-family: monospace;
+                    opacity: 1;
+                    border: 1px solid #89D1FF;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                }
+                
+                .widget-actions {
+                    display: flex;
+                    gap: var(--spacing-xs, 4px);
+                    opacity: 0;
+                    transition: opacity var(--transition-fast, 0.15s ease);
+                }
+                
+                .widget-container:hover .widget-actions,
+                .entity-container:hover .widget-actions {
+                    opacity: 1;
+                }
+                
+                .widget-view-toggle {
+                    margin-right: 8px;
+                }
+                
+                .entity-content {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .btn-widget {
+                    background: transparent;
+                    border: 1px solid var(--border-light, #1A2733);
+                    color: var(--text-secondary, #A9B4BE);
+                    padding: 4px 8px;
+                    border-radius: var(--radius-sm, 4px);
+                    cursor: pointer;
+                    font-size: 0.8em;
+                    transition: all var(--transition-fast, 0.15s ease);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 28px;
+                    height: 28px;
+                }
+                
+                .btn-widget:hover {
+                    background: var(--background-secondary, #1A2733);
+                    border-color: var(--business-blue, #1B90FF);
+                    color: var(--text-primary, #EAECEE);
+                    transform: translateY(-1px);
+                }
+                
+                .btn-widget.danger:hover {
+                    background: var(--danger-color, #FF3B30);
+                    border-color: var(--danger-color, #FF3B30);
+                    color: white;
+                }
+                
+                /* Loading states */
+                .loading-state, .error-state {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    text-align: center;
+                    color: var(--text-secondary, #A9B4BE);
+                    gap: var(--spacing-sm, 8px);
+                }
+                
+                .loading-icon, .error-icon {
+                    font-size: 2em;
+                    opacity: 0.7;
+                }
+                
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+                
+                .loading-icon {
+                    animation: spin 1s linear infinite;
+                }
+            </style>
+        `;
+
+        const template = `
+            ${style}
+            <div class="canvas-container">
+                ${this.renderContent()}
+            </div>
+        `;
+
+        this.shadowRoot.innerHTML = template;
+    }
+
+    /**
+     * Render a specific new entity asynchronously
+     */
+    async renderNewEntityAsync(entity) {
+        if (!this.dualModeRenderer) {
+            console.warn('⚠️ Canvas: DualModeRenderer not available for new entity');
+            return;
+        }
+
+        try {
+            // Wait a bit for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const container = this.shadowRoot.querySelector(`#entity-content-${entity.id}`);
+            if (container) {
+                await this.dualModeRenderer.renderWidget(entity, container);
+            }
+        } catch (error) {
+            console.error(`❌ Canvas: Failed to render new entity ${entity.id}:`, error);
+        }
+    }
+
     renderContent() {
         if (this.entities.length === 0) {
             return this.renderEmptyCanvas();
@@ -448,6 +685,11 @@ class DashboardCanvasEntity extends HTMLElement {
                         <span class="widget-id-label">#${entity.id.split('_').pop()}</span>
                     </div>
                     <div class="widget-actions">
+                        <widget-view-toggle 
+                            widget-id="${entity.id}" 
+                            class="widget-view-toggle"
+                            view-mode="false">
+                        </widget-view-toggle>
                         <button class="btn-widget edit-btn" data-action="edit" data-entity-id="${entity.id}" title="Edit widget">
                             ⚙️
                         </button>
@@ -468,7 +710,7 @@ class DashboardCanvasEntity extends HTMLElement {
     }
 
     /**
-     * Render entity content using EntityRenderer or fallback
+     * Render entity content using DualModeRenderer
      */
     renderEntityContent(entity) {
         // Check if entity is loading
@@ -481,12 +723,12 @@ class DashboardCanvasEntity extends HTMLElement {
             return this.renderErrorState(entity.state.error);
         }
 
-        // Return placeholder for EntityRenderer async processing
+        // Return placeholder for async processing with DualModeRenderer
         return this.renderEntityPlaceholder(entity);
     }
 
     /**
-     * Render placeholder while EntityRenderer processes
+     * Render placeholder while DualModeRenderer processes
      */
     renderEntityPlaceholder(entity) {
         // Check if entity has data binding
@@ -501,22 +743,28 @@ class DashboardCanvasEntity extends HTMLElement {
                     <div>${entity.type} Widget</div>
                     <div style="font-size: 0.8em; margin-top: 4px; opacity: 0.7;">Entity ID: ${entity.id}</div>
                     ${hasData ? this.renderEntityDataStatus(entity) : this.renderNoDataStatus()}
+                    <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.7; color: var(--business-blue, #1B90FF);">
+                        Use the toggle button to switch to View mode
+                    </div>
                 </div>
             </div>
         `;
     }
 
     /**
-     * Render entities asynchronously with EntityRenderer
+     * Render entities asynchronously with DualModeRenderer
      */
     async renderEntitiesAsync() {
-        if (!this.entityRenderer) return;
+        if (!this.dualModeRenderer) {
+            console.warn('⚠️ Canvas: DualModeRenderer not available, skipping async render');
+            return;
+        }
 
         for (const entity of this.entities) {
             try {
                 const container = this.shadowRoot.querySelector(`#entity-content-${entity.id}`);
                 if (container) {
-                    await this.entityRenderer.render(entity, container);
+                    await this.dualModeRenderer.renderWidget(entity, container);
                 }
             } catch (error) {
                 console.error(`❌ Canvas: Failed to render entity ${entity.id}:`, error);
@@ -620,6 +868,12 @@ class DashboardCanvasEntity extends HTMLElement {
             }
         });
 
+        // Widget view toggle events
+        this.shadowRoot.addEventListener('widget-view-toggle', (e) => {
+            const { widgetId, isViewMode, mode } = e.detail;
+            this.handleViewToggle(widgetId, isViewMode, mode);
+        });
+
         // Mark events as initialized
         this.eventsInitialized = true;
         console.log('✅ Canvas: Events bound successfully');
@@ -653,6 +907,59 @@ class DashboardCanvasEntity extends HTMLElement {
     }
 
     /**
+     * Handle view mode toggle for widgets
+     */
+    async handleViewToggle(widgetId, isViewMode, mode) {
+        console.log(`🔄 Canvas: View toggle for widget ${widgetId} → ${mode.toUpperCase()}`);
+        
+        if (!this.dualModeRenderer) {
+            console.warn('⚠️ Canvas: DualModeRenderer not available');
+            return;
+        }
+
+        try {
+            // Update the renderer's view mode state
+            this.dualModeRenderer.setViewMode(widgetId, isViewMode);
+            
+            // Find the entity
+            const entity = this.entities.find(e => e.id === widgetId);
+            if (!entity) {
+                console.error('❌ Canvas: Entity not found for toggle:', widgetId);
+                return;
+            }
+
+            // Re-render the widget content
+            const container = this.shadowRoot.querySelector(`#entity-content-${widgetId}`);
+            if (container) {
+                // Show loading state during re-render
+                container.innerHTML = `
+                    <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary, #A9B4BE);">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; margin-bottom: 8px;">🔄</div>
+                            <div>Switching to ${mode} mode...</div>
+                        </div>
+                    </div>
+                `;
+
+                // Slight delay for smooth transition
+                setTimeout(async () => {
+                    await this.dualModeRenderer.renderWidget(entity, container);
+                }, 200);
+            }
+
+            // Dispatch event for other components to listen
+            this.dispatchEvent(new CustomEvent('widget-view-changed', {
+                detail: { widgetId, isViewMode, mode, entity },
+                bubbles: true,
+                composed: true
+            }));
+
+        } catch (error) {
+            console.error('❌ Canvas: View toggle failed:', error);
+        }
+    }
+
+    /**
      * Add new entity to canvas
      */
     async addEntity(entityConfig) {
@@ -663,7 +970,7 @@ class DashboardCanvasEntity extends HTMLElement {
             
             if (this.widgetManager) {
                 // Use WidgetManager to create entity
-                entity = await this.widgetManager.create(entityConfig);
+                entity = this.widgetManager.createWidget(entityConfig.type, entityConfig);
             } else {
                 // Fallback: create simple entity object
                 entity = this.createSimpleEntity(entityConfig);
@@ -672,8 +979,11 @@ class DashboardCanvasEntity extends HTMLElement {
             // Add to entities array
             this.entities.push(entity);
             
-            // Re-render
-            this.render();
+            // Re-render (without triggering async render to avoid recursion)
+            this.renderSyncOnly();
+            
+            // Render the new entity specifically
+            this.renderNewEntityAsync(entity);
             
             // Emit event for external components
             this.dispatchEvent(new CustomEvent('entityAdded', {
@@ -703,19 +1013,37 @@ class DashboardCanvasEntity extends HTMLElement {
             title: config.title || `${config.type} Widget`,
             layout: {
                 size: {
-                    width: config.size?.width || 4,
-                    height: config.size?.height || 1
+                    width: config.layout?.width || 4,
+                    height: config.layout?.height || 1
+                },
+                position: {
+                    x: config.layout?.x || 0,
+                    y: config.layout?.y || 0
                 }
             },
-            dataBinding: {
+            dataBinding: config.dataBinding || {
                 dimensions: [],
                 measures: [],
-                filters: [],
-                lastApplied: null
+                filters: []
             },
+            configuration: config.configuration || {},
             state: {
                 loading: false,
-                error: null
+                error: null,
+                isVisible: true,
+                hasError: false
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            // Méthodes utilitaires pour compatibilité
+            validate: () => ({ isValid: true, errors: [] }),
+            getSummary: function() {
+                return {
+                    id: this.id,
+                    type: this.type,
+                    title: this.title,
+                    hasData: this.dataBinding.dimensions.length > 0 || this.dataBinding.measures.length > 0
+                };
             }
         };
     }
@@ -862,20 +1190,25 @@ class DashboardCanvasEntity extends HTMLElement {
                 throw new Error(`Entity not found: ${entityId}`);
             }
             
-            if (this.widgetManager) {
-                // Update through WidgetManager
-                await this.widgetManager.updateDataBinding(entityId, dataBinding);
-                
-                // Refresh entity from manager
-                const updatedEntity = await this.widgetManager.get(entityId);
-                const index = this.entities.findIndex(e => e.id === entityId);
-                if (index !== -1) {
-                    this.entities[index] = updatedEntity;
+            // Mettre à jour le data binding de l'entité directement
+            entity.dataBinding = { ...entity.dataBinding, ...dataBinding };
+            entity.dataBinding.lastApplied = new Date().toISOString();
+            
+            // Mettre à jour les timestamps
+            entity.metadata.updated = new Date().toISOString();
+            entity.state.isDirty = true;
+            
+            console.log('✅ Canvas: Entity data binding updated:', entityId);
+            console.log('📊 Updated dataBinding:', entity.dataBinding);
+            
+            // Sauvegarder via le repository si disponible
+            if (this.entityRepository) {
+                try {
+                    await this.entityRepository.save(entity);
+                    console.log('💾 Canvas: Entity saved to repository');
+                } catch (error) {
+                    console.warn('⚠️ Canvas: Failed to save entity to repository:', error);
                 }
-            } else {
-                // Fallback: direct update
-                entity.dataBinding = { ...entity.dataBinding, ...dataBinding };
-                entity.dataBinding.lastApplied = new Date().toISOString();
             }
             
             // Re-render specific entity

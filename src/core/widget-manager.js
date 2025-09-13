@@ -11,6 +11,7 @@ class WidgetManager {
         this.repository = repository; // External storage backend
         this.listeners = new Map(); // Event listeners
         this.entityRenderer = null; // Will be injected
+        this.widgetDefinitions = new Map(); // Widget definitions storage
         
         console.log('🏗️ WidgetManager: Initialized');
     }
@@ -31,6 +32,178 @@ class WidgetManager {
         console.log('💾 WidgetManager: Repository attached:', repository.constructor.name);
     }
     
+    // === UNIFIED WIDGET LOADING ===
+    
+    /**
+     * Load and register a unified widget file
+     * @param {string} widgetPath - Path to the unified widget file
+     * @returns {Promise<Object>} Widget definition and class
+     */
+    async loadUnifiedWidget(widgetPath) {
+        console.log('📦 WidgetManager: Loading unified widget:', widgetPath);
+        
+        try {
+            // Load the widget file
+            const script = document.createElement('script');
+            script.src = widgetPath;
+            
+            await new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+            
+            // Extract widget definition from global scope
+            const widgetDefinitions = this.extractWidgetDefinitions();
+            
+            if (widgetDefinitions.length === 0) {
+                throw new Error('No widget definitions found in loaded script');
+            }
+            
+            // Register each widget definition
+            const registeredWidgets = [];
+            for (const definition of widgetDefinitions) {
+                await this.registerWidgetDefinition(definition);
+                registeredWidgets.push(definition);
+            }
+            
+            console.log('✅ WidgetManager: Unified widgets loaded:', registeredWidgets.map(w => w.type));
+            return registeredWidgets;
+            
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to load unified widget:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Extract widget definitions from global scope
+     */
+    extractWidgetDefinitions() {
+        const definitions = [];
+        
+        // Look for widget definitions in window object
+        for (const key in window) {
+            if (key.endsWith('_WIDGET_DEFINITION') && typeof window[key] === 'object') {
+                definitions.push(window[key]);
+            }
+        }
+        
+        return definitions;
+    }
+    
+    /**
+     * Register a widget definition for use in the system
+     */
+    async registerWidgetDefinition(definition) {
+        console.log('📋 WidgetManager: Registering widget definition:', definition.type);
+        
+        try {
+            // Validate definition structure
+            if (!definition.type || !definition.name) {
+                throw new Error('Widget definition must have type and name');
+            }
+            
+            // Store definition for widget creation
+            this.widgetDefinitions.set(definition.type, definition);
+            
+            console.log('✅ WidgetManager: Widget definition registered:', definition.type);
+            this.emit('widgetDefinitionRegistered', definition);
+            
+        } catch (error) {
+            console.error('❌ WidgetManager: Failed to register widget definition:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Create widget entity from registered definition
+     */
+    createWidgetFromDefinition(type, config = {}) {
+        console.log('🏭 WidgetManager: Creating widget from definition:', type);
+        
+        if (!this.widgetDefinitions || !this.widgetDefinitions.has(type)) {
+            throw new Error(`Widget definition not found for type: ${type}`);
+        }
+        
+        const definition = this.widgetDefinitions.get(type);
+        
+        // Create entity config using definition as template
+        const entityConfig = {
+            type: definition.type,
+            name: definition.name,
+            title: config.title || definition.title,
+            version: definition.version,
+            metadata: { ...definition.metadata },
+            dataBinding: { 
+                ...definition.dataBinding.defaultBinding,
+                ...config.dataBinding 
+            },
+            layout: { 
+                ...definition.layout,
+                ...config.layout 
+            },
+            configuration: {
+                ...this.getDefaultConfiguration(definition.configuration),
+                ...config.configuration
+            },
+            rendering: { ...definition.rendering }
+        };
+        
+        // Create entity directly without calling createWidget (avoid recursion)
+        const entity = new WidgetEntity(entityConfig);
+        
+        // Validate entity
+        const validation = entity.validate();
+        if (!validation.isValid) {
+            throw new Error(`Invalid widget entity: ${validation.errors.join(', ')}`);
+        }
+        
+        // Store in memory
+        this.entities.set(entity.id, entity);
+        
+        // Persist if repository available
+        if (this.repository) {
+            this.repository.save(entity);
+        }
+        
+        console.log('✅ WidgetManager: Widget created from definition:', entity.getSummary());
+        this.emit('widgetCreated', entity);
+        
+        return entity;
+    }
+    
+    /**
+     * Get default configuration values from definition
+     */
+    getDefaultConfiguration(configDefinition) {
+        const defaultConfig = {};
+        
+        for (const [key, configItem] of Object.entries(configDefinition || {})) {
+            if (configItem.default !== undefined) {
+                defaultConfig[key] = configItem.default;
+            }
+        }
+        
+        return defaultConfig;
+    }
+    
+    /**
+     * Get available widget types
+     */
+    getAvailableWidgetTypes() {
+        if (!this.widgetDefinitions) return [];
+        
+        return Array.from(this.widgetDefinitions.keys());
+    }
+    
+    /**
+     * Get widget definition by type
+     */
+    getWidgetDefinition(type) {
+        return this.widgetDefinitions?.get(type) || null;
+    }
+    
     // === CRUD OPERATIONS ===
     
     /**
@@ -40,6 +213,13 @@ class WidgetManager {
         console.log('🆕 WidgetManager: Creating widget:', type, config);
         
         try {
+            // Check if we have a registered definition for this type
+            if (this.widgetDefinitions && this.widgetDefinitions.has(type)) {
+                console.log('🏭 WidgetManager: Using registered definition for:', type);
+                return this.createWidgetFromDefinition(type, config);
+            }
+            
+            // Fallback to basic entity creation
             const entity = new WidgetEntity({
                 type: type,
                 ...config

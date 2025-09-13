@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Widget View Toggle</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .test-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            background: #1A2733;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            min-height: 600px;
+        }
+        
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        
+        button:hover {
+            background: #005a9e;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #007acc;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #007acc;
+        }
+        
+        /* Canvas variables pour le theming */
+        :root {
+            --background-primary: #12171C;
+            --background-secondary: #1A2733;
+            --background-tertiary: #00144A;
+            --text-primary: #EAECEE;
+            --text-secondary: #A9B4BE;
+            --text-disabled: #6B7680;
+            --business-blue: #1B90FF;
+            --business-blue-dark: #0066CC;
+            --border-light: #1A2733;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --transition-fast: 0.15s ease;
+            --success-color: #30C330;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-header">
+            <h1>🔄 Test Widget View Toggle</h1>
+            <p>Test du système de basculement View/Info mode pour les widgets du canvas</p>
+        </div>
+
+        <div class="test-controls">
+            <h3>🎮 Test Controls</h3>
+            <div>
+                <button onclick="initializeSystem()">🏗️ Initialize System</button>
+                <button onclick="loadUnifiedWidgets()">📦 Load Unified Widgets</button>
+                <button onclick="addTestWidgets()">➕ Add Test Widgets</button>
+                <button onclick="clearCanvas()">🗑️ Clear Canvas</button>
+                <button onclick="toggleAllToView()">👁️ All to View Mode</button>
+                <button onclick="toggleAllToInfo()">ℹ️ All to Info Mode</button>
+            </div>
+            <div id="status" class="status info">Prêt pour les tests...</div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instructions de Test</h3>
+            <ol>
+                <li><strong>Initialize System</strong> - Initialise le WidgetManager et les renderers</li>
+                <li><strong>Load Unified Widgets</strong> - Charge les widgets unifiés (bar-chart, etc.)</li>
+                <li><strong>Add Test Widgets</strong> - Ajoute des widgets de test au canvas</li>
+                <li><strong>Toggle Widgets</strong> - Utilisez les boutons toggle sur chaque widget pour basculer entre View et Info</li>
+                <li><strong>Vérifiez</strong> - Mode Info montre les métadonnées, Mode View montre le rendu visuel</li>
+            </ol>
+        </div>
+
+        <div class="canvas-wrapper">
+            <dashboard-canvas-entity id="test-canvas"></dashboard-canvas-entity>
+        </div>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="src/core/widget-entity.js"></script>
+    <script src="src/core/event-emitter.js"></script>
+    <script src="src/core/widget-manager.js"></script>
+    <script src="src/components/widget-view-toggle.js"></script>
+    <script src="src/renderers/widget-dual-mode-renderer.js"></script>
+    <script src="src/components/dashboard-canvas-entity.js"></script>
+
+    <script>
+        // Variables globales
+        let canvas;
+        let widgetManager;
+        let dualModeRenderer;
+        let testWidgets = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('test-canvas');
+            updateStatus('Système prêt pour l\'initialisation', 'info');
+            
+            // Écouter les événements de toggle
+            canvas.addEventListener('widget-view-changed', (e) => {
+                const { widgetId, mode } = e.detail;
+                updateStatus(`Widget ${widgetId.substring(0, 8)}... basculé vers mode ${mode.toUpperCase()}`, 'success');
+            });
+        });
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.className = `status ${type}`;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        async function initializeSystem() {
+            try {
+                updateStatus('Initialisation du système...', 'info');
+                
+                // Le canvas s'initialise automatiquement
+                // Attendre un peu pour l'initialisation
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                updateStatus('Système initialisé avec succès!', 'success');
+                
+            } catch (error) {
+                updateStatus(`Erreur d'initialisation: ${error.message}`, 'error');
+                console.error('Erreur détaillée:', error);
+            }
+        }
+
+        async function loadUnifiedWidgets() {
+            try {
+                updateStatus('Chargement des widgets unifiés...', 'info');
+                
+                // Accéder au WidgetManager du canvas
+                if (!canvas.widgetManager) {
+                    throw new Error('WidgetManager non disponible');
+                }
+                
+                // Charger le widget bar-chart unifié
+                await canvas.widgetManager.loadUnifiedWidget('src/widgets/bar-chart-widget-unified.js');
+                
+                updateStatus('Widgets unifiés chargés avec succès!', 'success');
+                
+            } catch (error) {
+                updateStatus(`Erreur de chargement: ${error.message}`, 'error');
+                console.error('Erreur détaillée:', error);
+            }
+        }
+
+        async function addTestWidgets() {
+            try {
+                updateStatus('Ajout des widgets de test...', 'info');
+                
+                // Protection contre les appels multiples
+                if (window.isAddingWidgets) {
+                    updateStatus('Ajout déjà en cours...', 'info');
+                    return;
+                }
+                window.isAddingWidgets = true;
+                
+                const testWidgetConfigs = [
+                    {
+                        type: 'bar-chart',
+                        title: 'Ventes par Région',
+                        layout: { x: 0, y: 0, width: 6, height: 2 },
+                        dataBinding: {
+                            dimensions: [
+                                { name: 'region', displayName: 'Region', category: 'DIMENSION' }
+                            ],
+                            measures: [
+                                { name: 'sales', displayName: 'Sales', category: 'MEASURE' }
+                            ],
+                            filters: []
+                        },
+                        configuration: {
+                            title: 'Ventes par Région',
+                            colorScheme: 'business',
+                            showValues: true
+                        }
+                    },
+                    {
+                        type: 'bar-chart',
+                        title: 'Performance Équipe',
+                        layout: { x: 6, y: 0, width: 6, height: 2 },
+                        dataBinding: {
+                            dimensions: [
+                                { name: 'team', displayName: 'Team', category: 'DIMENSION' }
+                            ],
+                            measures: [
+                                { name: 'performance', displayName: 'Performance', category: 'MEASURE' }
+                            ],
+                            filters: []
+                        },
+                        configuration: {
+                            title: 'Performance par Équipe',
+                            colorScheme: 'rainbow',
+                            showValues: false
+                        }
+                    },
+                    {
+                        type: 'line-chart',
+                        title: 'Évolution Mensuelle',
+                        layout: { x: 0, y: 2, width: 12, height: 2 },
+                        dataBinding: {
+                            dimensions: [],
+                            measures: [],
+                            filters: []
+                        },
+                        configuration: {
+                            title: 'Évolution Mensuelle',
+                            showGrid: true
+                        }
+                    }
+                ];
+
+                for (let i = 0; i < testWidgetConfigs.length; i++) {
+                    const config = testWidgetConfigs[i];
+                    updateStatus(`Ajout widget ${i + 1}/${testWidgetConfigs.length}: ${config.title}`, 'info');
+                    
+                    try {
+                        await canvas.addEntity(config);
+                        // Délai entre chaque ajout pour éviter la surcharge
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    } catch (widgetError) {
+                        console.error(`Erreur widget ${config.title}:`, widgetError);
+                        updateStatus(`Erreur widget ${config.title}: ${widgetError.message}`, 'error');
+                    }
+                }
+                
+                updateStatus(`${testWidgetConfigs.length} widgets de test ajoutés!`, 'success');
+                
+            } catch (error) {
+                updateStatus(`Erreur d'ajout: ${error.message}`, 'error');
+                console.error('Erreur détaillée:', error);
+            } finally {
+                window.isAddingWidgets = false;
+            }
+        }
+
+        function clearCanvas() {
+            try {
+                canvas.clearCanvas();
+                updateStatus('Canvas nettoyé', 'success');
+            } catch (error) {
+                updateStatus(`Erreur de nettoyage: ${error.message}`, 'error');
+            }
+        }
+
+        function toggleAllToView() {
+            try {
+                const toggles = canvas.shadowRoot.querySelectorAll('widget-view-toggle');
+                toggles.forEach(toggle => {
+                    if (!toggle.isViewMode) {
+                        toggle.enableViewMode();
+                    }
+                });
+                updateStatus(`${toggles.length} widgets basculés en mode View`, 'success');
+            } catch (error) {
+                updateStatus(`Erreur de basculement: ${error.message}`, 'error');
+            }
+        }
+
+        function toggleAllToInfo() {
+            try {
+                const toggles = canvas.shadowRoot.querySelectorAll('widget-view-toggle');
+                toggles.forEach(toggle => {
+                    if (toggle.isViewMode) {
+                        toggle.enableInfoMode();
+                    }
+                });
+                updateStatus(`${toggles.length} widgets basculés en mode Info`, 'success');
+            } catch (error) {
+                updateStatus(`Erreur de basculement: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

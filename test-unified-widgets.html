@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Widgets Unifiés</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .widget-container {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            min-height: 300px;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test des Widgets Unifiés</h1>
+        
+        <div class="test-section">
+            <h2>📊 Test Widget Bar Chart Unifié</h2>
+            <div class="controls">
+                <button onclick="loadBarChartWidget()">Charger Bar Chart Widget</button>
+                <button onclick="createBarChartInstance()">Créer Instance</button>
+                <button onclick="updateChartData()">Mettre à jour données</button>
+            </div>
+            <div id="status" class="status info">Prêt pour les tests...</div>
+            <div id="widget-container" class="widget-container">
+                <!-- Le widget sera rendu ici -->
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Informations Système</h2>
+            <div id="system-info"></div>
+        </div>
+    </div>
+
+    <!-- Chargement des dépendances -->
+    <script src="src/core/widget-entity.js"></script>
+    <script src="src/core/event-emitter.js"></script>
+    <script src="src/core/widget-manager.js"></script>
+    
+    <script>
+        // Variables globales pour les tests
+        let widgetManager;
+        let barChartEntity;
+        let barChartWidget;
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Créer le WidgetManager
+            widgetManager = new WidgetManager();
+            updateStatus('WidgetManager initialisé', 'success');
+            
+            // Afficher les informations système
+            updateSystemInfo();
+        });
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.className = `status ${type}`;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateSystemInfo() {
+            const info = document.getElementById('system-info');
+            info.innerHTML = `
+                <p><strong>WidgetManager:</strong> ${widgetManager ? '✅ Chargé' : '❌ Non chargé'}</p>
+                <p><strong>Widgets registrés:</strong> ${widgetManager && widgetManager.widgetDefinitions ? widgetManager.widgetDefinitions.size : 0}</p>
+                <p><strong>Entités en mémoire:</strong> ${widgetManager ? widgetManager.entities.size : 0}</p>
+            `;
+        }
+        
+        async function loadBarChartWidget() {
+            try {
+                updateStatus('Chargement du widget bar-chart unifié...', 'info');
+                
+                // Charger le widget unifié
+                await widgetManager.loadUnifiedWidget('src/widgets/bar-chart-widget-unified.js');
+                
+                updateStatus('Widget bar-chart chargé avec succès!', 'success');
+                updateSystemInfo();
+                
+            } catch (error) {
+                updateStatus(`Erreur lors du chargement: ${error.message}`, 'error');
+                console.error('Erreur détaillée:', error);
+            }
+        }
+        
+        async function createBarChartInstance() {
+            try {
+                if (!widgetManager.widgetDefinitions || !widgetManager.widgetDefinitions.has('bar-chart')) {
+                    throw new Error('Widget bar-chart non chargé. Chargez-le d\'abord.');
+                }
+                
+                updateStatus('Création de l\'instance bar-chart...', 'info');
+                
+                // Créer l'entité widget
+                barChartEntity = widgetManager.createWidget('bar-chart', {
+                    name: 'Test Bar Chart',
+                    layout: {
+                        x: 0, y: 0, width: 600, height: 400
+                    },
+                    configuration: {
+                        title: 'Ventes par Région',
+                        colorScheme: 'business',
+                        showValues: true,
+                        animate: true
+                    }
+                });
+                
+                // Créer l'élément de rendu
+                const definition = widgetManager.widgetDefinitions.get('bar-chart');
+                barChartWidget = new definition.class();
+                
+                // Initialiser avec l'entité
+                barChartWidget.initializeWithEntity(barChartEntity);
+                
+                // Ajouter des données de test
+                const testData = [
+                    { label: 'Nord', value: 25000 },
+                    { label: 'Sud', value: 18000 },
+                    { label: 'Est', value: 32000 },
+                    { label: 'Ouest', value: 21000 },
+                    { label: 'Centre', value: 28000 }
+                ];
+                
+                barChartWidget.updateData(testData);
+                
+                // Rendre dans le conteneur
+                const container = document.getElementById('widget-container');
+                container.innerHTML = '';
+                container.appendChild(barChartWidget);
+                
+                updateStatus('Instance bar-chart créée et rendue!', 'success');
+                updateSystemInfo();
+                
+            } catch (error) {
+                updateStatus(`Erreur lors de la création: ${error.message}`, 'error');
+                console.error('Erreur détaillée:', error);
+            }
+        }
+        
+        function updateChartData() {
+            try {
+                if (!barChartWidget) {
+                    throw new Error('Aucune instance de widget créée');
+                }
+                
+                // Nouvelles données aléatoires
+                const newData = [
+                    { label: 'Nord', value: Math.floor(Math.random() * 40000) + 10000 },
+                    { label: 'Sud', value: Math.floor(Math.random() * 40000) + 10000 },
+                    { label: 'Est', value: Math.floor(Math.random() * 40000) + 10000 },
+                    { label: 'Ouest', value: Math.floor(Math.random() * 40000) + 10000 },
+                    { label: 'Centre', value: Math.floor(Math.random() * 40000) + 10000 }
+                ];
+                
+                barChartWidget.updateData(newData);
+                updateStatus('Données mises à jour!', 'success');
+                
+            } catch (error) {
+                updateStatus(`Erreur lors de la mise à jour: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

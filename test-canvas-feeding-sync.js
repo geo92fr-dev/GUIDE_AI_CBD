@@ -75,10 +75,59 @@ function testWidgetEdit() {
     canvas.editEntity(firstEntity);
 }
 
+// Fonction pour tester le changement de sélection dans la combo
+function testWidgetSelectionChange() {
+    console.log('🧪 TEST: Testing widget selection change in Data Assignment');
+    
+    const feedingPanel = document.querySelector('feeding-panel');
+    if (!feedingPanel) {
+        console.error('❌ Feeding Panel not found');
+        return;
+    }
+    
+    // S'assurer qu'on a des widgets
+    feedingPanel.updateCanvasWidgets();
+    
+    if (feedingPanel.canvasWidgets.length === 0) {
+        console.log('📝 No widgets available, adding some first...');
+        testWidgetAddition();
+        setTimeout(() => testWidgetSelectionChange(), 500);
+        return;
+    }
+    
+    console.log('📊 Available widgets:', feedingPanel.canvasWidgets.map(w => ({id: w.id, type: w.type})));
+    
+    // Simuler le changement de sélection
+    const widgetSelector = feedingPanel.shadowRoot.querySelector('#widget-selector');
+    if (!widgetSelector) {
+        console.error('❌ Widget selector not found');
+        return;
+    }
+    
+    console.log('📊 Widget selector options:', Array.from(widgetSelector.options).map(opt => ({ value: opt.value, text: opt.text })));
+    
+    // Changer vers le premier widget disponible
+    if (feedingPanel.canvasWidgets.length > 0) {
+        const firstWidget = feedingPanel.canvasWidgets[0];
+        console.log('🔄 Changing selection to:', firstWidget.id);
+        
+        widgetSelector.value = firstWidget.id;
+        widgetSelector.dispatchEvent(new Event('change'));
+        
+        // Vérifier que les données ont été chargées
+        setTimeout(() => {
+            console.log('📊 Assignments after selection change:', feedingPanel.assignments);
+            console.log('✅ Selection change test completed');
+        }, 100);
+    }
+}
+
 // Exposer les fonctions de test globalement
 window.testWidgetAddition = testWidgetAddition;
 window.testWidgetEdit = testWidgetEdit;
+window.testWidgetSelectionChange = testWidgetSelectionChange;
 
 console.log('🧪 Test functions available:');
 console.log('- testWidgetAddition() : Teste l\'ajout d\'un widget et la mise à jour du feeding panel');
 console.log('- testWidgetEdit() : Teste l\'édition d\'un widget');
+console.log('- testWidgetSelectionChange() : Teste le changement de sélection dans la combo Data Assignment');
