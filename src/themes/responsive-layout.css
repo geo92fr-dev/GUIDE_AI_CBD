@@ -1,0 +1,338 @@
+/**
+ * 📱 Responsive Layout System
+ * 
+ * Mobile-first responsive design for WIDGETS Platform
+ * Based on CSS Grid and Flexbox for 4-panel architecture
+ */
+
+/* Responsive Grid Container */
+.responsive-grid {
+  display: grid;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Desktop Layout (1200px+) */
+@media (min-width: 1200px) {
+  .responsive-grid {
+    grid-template-columns: 250px 1fr 300px 280px;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas: 
+      "header header header header"
+      "left-panel canvas right-panel-1 right-panel-2";
+  }
+}
+
+/* Laptop Layout (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .responsive-grid {
+    grid-template-columns: 200px 1fr 250px 250px;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas: 
+      "header header header header"
+      "left-panel canvas right-panel-1 right-panel-2";
+  }
+}
+
+/* Tablet Layout (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .responsive-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 60px 300px 1fr;
+    grid-template-areas: 
+      "header header"
+      "left-panel right-panel-2"
+      "canvas right-panel-1";
+  }
+  
+  .panel-collapsible {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}
+
+/* Mobile Layout (< 768px) */
+@media (max-width: 767px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60px auto auto auto 1fr;
+    grid-template-areas: 
+      "header"
+      "left-panel"
+      "right-panel-2"
+      "right-panel-1"
+      "canvas";
+  }
+  
+  .panel-collapsible {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  
+  /* Mobile-specific panel styling */
+  .mobile-panel {
+    border-radius: var(--radius-md);
+    margin: var(--spacing-sm);
+    box-shadow: 0 2px 8px var(--shadow-light);
+  }
+  
+  .mobile-panel-header {
+    padding: var(--spacing-md);
+    background: var(--primary);
+    color: var(--text-inverse);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .mobile-panel-content {
+    transition: max-height var(--transition-normal) ease;
+    overflow: hidden;
+  }
+  
+  .mobile-panel-content.collapsed {
+    max-height: 0;
+  }
+  
+  .mobile-panel-content.expanded {
+    max-height: 400px;
+  }
+}
+
+/* Container Responsiveness */
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--spacing-md);
+}
+
+/* Responsive Text */
+@media (max-width: 767px) {
+  h1 { font-size: var(--font-size-xl); }
+  h2 { font-size: var(--font-size-lg); }
+  h3 { font-size: var(--font-size-md); }
+  
+  .panel-header {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+/* Panel Responsive Behavior */
+.panel-responsive {
+  transition: all var(--transition-normal) ease;
+}
+
+@media (max-width: 991px) {
+  .panel-responsive {
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+/* Responsive Canvas */
+.canvas-responsive {
+  padding: var(--spacing-md);
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+  .canvas-responsive {
+    padding: var(--spacing-sm);
+    min-height: 400px;
+  }
+}
+
+/* Widget Responsiveness */
+.widget-responsive {
+  width: 100%;
+  min-height: 200px;
+  transition: all var(--transition-normal) ease;
+}
+
+@media (min-width: 1200px) {
+  .widget-responsive {
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 767px) {
+  .widget-responsive {
+    min-height: 180px;
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+/* Responsive Tables */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  .table-responsive table {
+    font-size: var(--font-size-sm);
+  }
+  
+  .table-responsive th,
+  .table-responsive td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+/* Responsive Forms */
+@media (max-width: 767px) {
+  .form-responsive .form-control {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .form-responsive .btn {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+/* Responsive Navigation */
+.nav-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 767px) {
+  .nav-responsive {
+    flex-direction: column;
+  }
+  
+  .nav-responsive .nav-item {
+    width: 100%;
+  }
+}
+
+/* Touch-friendly sizes */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+  
+  .form-control {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  
+  .webi-field-item {
+    min-height: 44px;
+    padding: var(--spacing-md);
+  }
+}
+
+/* Responsive Utilities */
+.hidden-mobile {
+  display: block;
+}
+
+.hidden-desktop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .hidden-mobile {
+    display: none;
+  }
+  
+  .hidden-desktop {
+    display: block;
+  }
+}
+
+.visible-mobile {
+  display: none;
+}
+
+.visible-desktop {
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .visible-mobile {
+    display: block;
+  }
+  
+  .visible-desktop {
+    display: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .app-shell {
+    grid-template-areas: 
+      "canvas canvas canvas canvas"
+      "canvas canvas canvas canvas";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  
+  .left-panel,
+  .right-panel-1,
+  .right-panel-2,
+  .app-header {
+    display: none !important;
+  }
+  
+  .canvas {
+    grid-area: canvas;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border-light: #000000;
+    --border-medium: #000000;
+    --text-muted: #000000;
+    --background-secondary: #FFFFFF;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  .auto-theme {
+    --background-primary: #1a1a1a;
+    --background-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --border-light: #404040;
+  }
+}

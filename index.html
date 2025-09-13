@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 WIDGETS Platform - Business Dashboard Builder</title>
+    
+    <!-- CSS Theme System -->
+    <link rel="stylesheet" href="src/themes/business-theme.css">
+    <link rel="stylesheet" href="src/themes/responsive-layout.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    
+    <style>
+        /* Application Shell - 4 Panels Layout */
+        .app-shell {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px 280px;
+            grid-template-rows: 60px 1fr;
+            grid-template-areas: 
+                "header header header header"
+                "left-panel canvas right-panel-1 right-panel-2";
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: var(--background-primary);
+        }
+        
+        .app-header {
+            grid-area: header;
+            background: var(--primary-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            border-bottom: 2px solid var(--primary-blue-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .left-panel {
+            grid-area: left-panel;
+            background: var(--background-primary);
+            border-right: 1px solid var(--border-light);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .canvas {
+            grid-area: canvas;
+            background: var(--background-secondary);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .right-panel-1 {
+            grid-area: right-panel-1;
+            background: var(--background-primary);
+            border-left: 1px solid var(--border-light);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .right-panel-2 {
+            grid-area: right-panel-2;
+            background: var(--background-primary);
+            border-left: 1px solid var(--border-light);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .app-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        
+        .btn-header {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
+        }
+        
+        .btn-header:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+        }
+        
+        .left-panel {
+            grid-area: left-panel;
+            background: var(--background-primary);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+        }
+        
+        .canvas {
+            grid-area: canvas;
+            background: var(--background-secondary);
+            position: relative;
+            overflow: auto;
+        }
+        
+        .right-panel-1 {
+            grid-area: right-panel-1;
+            background: var(--background-primary);
+            border-left: 1px solid var(--border-light);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+        }
+        
+        .right-panel-2 {
+            grid-area: right-panel-2;
+            background: var(--background-primary);
+            border-left: 1px solid var(--border-light);
+            overflow-y: auto;
+        }
+        
+        /* Responsive breakpoints */
+        @media (max-width: 1200px) {
+            .app-shell {
+                grid-template-columns: 200px 1fr 250px 250px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-rows: 60px auto auto auto 1fr;
+                grid-template-areas: 
+                    "header"
+                    "left-panel"
+                    "right-panel-2"
+                    "right-panel-1"
+                    "canvas";
+            }
+            
+            .left-panel,
+            .right-panel-1,
+            .right-panel-2 {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            
+            .canvas {
+                min-height: 400px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-rows: 60px auto auto auto 1fr;
+            }
+            
+            .app-header {
+                padding: 0 var(--spacing-md);
+            }
+            
+            .app-title {
+                font-size: 1em;
+            }
+            
+            .version-badge {
+                display: none;
+            }
+        }
+        
+        /* Panel Headers */
+        .panel-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-weight: 600;
+            font-size: 0.95em;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .panel-icon {
+            font-size: 1.1em;
+        }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        .loading::before {
+            content: "⏳";
+            margin-right: var(--spacing-sm);
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Application Header -->
+        <header class="app-header">
+            <div class="app-title">
+                <span class="app-icon">📊</span>
+                <span>WIDGETS Platform</span>
+                <span class="version-badge" style="font-size: 0.7em; background: rgba(255,255,255,0.2); padding: 0.2rem 0.5rem; border-radius: 10px;">MVP v1.0</span>
+            </div>
+            <div class="app-actions">
+                <button class="btn-header" id="save-dashboard">💾 Save</button>
+                <button class="btn-header" id="load-dashboard">📂 Load</button>
+                <button class="btn-header" id="export-dashboard">📤 Export</button>
+                <button class="btn-header" id="help-toggle">❓ Help</button>
+            </div>
+        </header>
+        
+        <!-- LEFT PANEL: Widget Library -->
+        <aside class="left-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">🧩</span>
+                    <span>Widget Library</span>
+                </div>
+            </div>
+            <!-- Widget Library Component will be loaded here -->
+            <widget-library></widget-library>
+        </aside>
+        
+        <!-- CANVAS: Dashboard Builder -->
+        <main class="canvas">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">🎨</span>
+                    <span>Dashboard Canvas</span>
+                </div>
+                <div class="canvas-actions">
+                    <button class="btn-header" id="clear-widgets" title="Clear all widgets">🗑️ Clear</button>
+                    <button class="btn-header" id="export-canvas" title="Export canvas">📤 Export</button>
+                </div>
+            </div>
+            <!-- Dashboard Canvas Component will be loaded here -->
+            <dashboard-canvas></dashboard-canvas>
+        </main>
+        
+        <!-- RIGHT PANEL 1: Feeding Panel (WebI Data Assignment) -->
+        <aside class="right-panel-1">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">⚙️</span>
+                    <span>Data Assignment</span>
+                </div>
+            </div>
+            <!-- Feeding Panel Component will be loaded here -->
+            <feeding-panel></feeding-panel>
+        </aside>
+        
+        <!-- RIGHT PANEL 2: Available Objects (WebI Dictionary) -->
+        <aside class="right-panel-2">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">📚</span>
+                    <span>Available Objects</span>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-header" id="load-data" title="Load CSV Data">📤</button>
+                </div>
+            </div>
+            <!-- Available Objects Panel Component will be loaded here -->
+            <available-objects-panel></available-objects-panel>
+        </aside>
+    </div>
+    
+    <!-- Hidden file input for CSV loading -->
+    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+    
+    <!-- Core Data System -->
+    <script src="src/data/data-parser.js"></script>
+    <script src="src/data/data-model.js"></script>
+    
+    <!-- Web Components -->
+    <script src="src/components/widget-library.js"></script>
+    <script src="src/components/dashboard-canvas.js"></script>
+    <script src="src/components/feeding-panel.js"></script>
+    <script src="src/components/available-objects-panel.js"></script>
+    
+    <!-- Widget Implementations -->
+    <script src="src/widgets/widget-base.js"></script>
+    <script src="src/widgets/bar-chart-widget.js"></script>
+    
+    <!-- Unified System Integration -->
+    <script src="src/migration/unified-system.js"></script>
+    
+    <script>
+        // Application Initialization with Unified System
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 WIDGETS Platform MVP v1.0 starting...');
+            
+            // Initialize Unified Widget Platform
+            window.WidgetPlatform.init();
+            
+            // Store global references
+            window.dataModel = window.WidgetPlatform.getDataModel();
+            window.stateManager = window.WidgetPlatform.getStateManager();
+            window.dragDropManager = window.WidgetPlatform.getDragDropManager();
+            
+            // Header button handlers
+            document.getElementById('save-dashboard')?.addEventListener('click', () => {
+                console.log('💾 Saving dashboard...');
+                // Will be implemented in state-manager.js
+            });
+            
+            document.getElementById('load-dashboard')?.addEventListener('click', () => {
+                console.log('📂 Loading dashboard...');
+                // Will be implemented in state-manager.js
+            });
+            
+            document.getElementById('export-dashboard')?.addEventListener('click', () => {
+                console.log('📤 Exporting dashboard...');
+                // Will be implemented in state-manager.js
+            });
+            
+            document.getElementById('help-toggle')?.addEventListener('click', () => {
+                alert('📖 WIDGETS Platform MVP v1.0\\n\\n1. Load CSV data using the 📤 button\\n2. Drag & drop fields to configure widgets\\n3. Build your dashboard!\\n\\nWebI-compatible workflow for easy adoption.');
+            });
+            
+            document.getElementById('clear-widgets')?.addEventListener('click', () => {
+                const dashboardCanvas = document.querySelector('dashboard-canvas');
+                if (dashboardCanvas && typeof dashboardCanvas.clearAllWidgets === 'function') {
+                    dashboardCanvas.clearAllWidgets();
+                }
+            });
+            
+            document.getElementById('export-canvas')?.addEventListener('click', () => {
+                const dashboardCanvas = document.querySelector('dashboard-canvas');
+                if (dashboardCanvas && typeof dashboardCanvas.exportCanvas === 'function') {
+                    dashboardCanvas.exportCanvas();
+                }
+            });
+            
+            document.getElementById('load-data')?.addEventListener('click', () => {
+                document.getElementById('csv-file-input')?.click();
+            });
+            
+            document.getElementById('csv-file-input')?.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file && file.name.toLowerCase().endsWith('.csv')) {
+                    try {
+                        console.log('📊 Loading CSV file:', file.name);
+                        await window.WidgetPlatform.loadCSVFile(file);
+                        console.log('✅ CSV file loaded successfully');
+                    } catch (error) {
+                        console.error('❌ Error loading CSV:', error);
+                        alert('Error loading CSV file: ' + error.message);
+                    }
+                } else {
+                    alert('Please select a valid CSV file.');
+                }
+            });
+        });
+        
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            console.error('🚨 Application Error:', event.error);
+        });
+        
+        // Performance monitoring
+        window.addEventListener('load', () => {
+            const loadTime = performance.now();
+            console.log(`⚡ App loaded in ${Math.round(loadTime)}ms`);
+        });
+    </script>
+</body>
+</html>

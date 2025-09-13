@@ -1,0 +1,21 @@
+Employee ID,Department,Name,Salary,Age,Join Date,Performance Rating,Is Manager,Years Experience,Location
+EMP001,IT,John Smith,75000,28,2020-03-15,4.2,false,5,New York
+EMP002,HR,Sarah Johnson,62000,35,2018-07-22,4.5,true,8,Los Angeles
+EMP003,Finance,Mike Chen,85000,31,2019-01-10,4.1,false,6,Chicago
+EMP004,IT,Emily Davis,78000,29,2020-09-08,4.3,false,4,New York
+EMP005,Marketing,David Wilson,68000,33,2017-11-30,3.9,true,9,Boston
+EMP006,Finance,Lisa Anderson,92000,37,2016-04-18,4.4,true,12,Chicago
+EMP007,IT,James Brown,71000,26,2021-02-14,4.0,false,3,San Francisco
+EMP008,HR,Jennifer Martinez,58000,30,2019-08-05,4.2,false,5,Los Angeles
+EMP009,Marketing,Robert Taylor,72000,32,2018-12-12,4.1,false,7,Boston
+EMP010,IT,Maria Garcia,82000,34,2017-06-25,4.6,true,10,New York
+EMP011,Finance,Christopher Lee,79000,29,2020-10-03,4.0,false,4,Chicago
+EMP012,HR,Amanda Clark,65000,31,2019-05-16,4.3,false,6,Los Angeles
+EMP013,Marketing,Kevin Rodriguez,70000,28,2020-01-20,3.8,false,4,Boston
+EMP014,IT,Nicole Lewis,86000,36,2016-09-11,4.5,true,11,San Francisco
+EMP015,Finance,Matthew Hall,88000,38,2015-12-07,4.2,true,13,Chicago
+EMP016,HR,Ashley Young,60000,27,2021-03-22,4.1,false,3,Los Angeles
+EMP017,Marketing,Andrew King,73000,30,2018-08-14,4.0,false,6,Boston
+EMP018,IT,Jessica Wright,77000,32,2019-04-09,4.4,false,7,New York
+EMP019,Finance,Daniel Green,84000,35,2017-10-28,4.3,false,8,Chicago
+EMP020,HR,Stephanie Adams,63000,29,2020-06-17,4.1,false,5,Los Angeles

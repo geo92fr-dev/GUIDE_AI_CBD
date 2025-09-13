@@ -1,0 +1,420 @@
+/**
+ * 🎨 Business Theme - Based on COLOR.md palette
+ * 
+ * Professional color scheme for WIDGETS Platform
+ * WebI-compatible design system
+ */
+
+:root {
+  /* Primary Business Colors - Blue Family */
+  --business-blue: #1B90FF;           /* Blue 6 - Primary actions */
+  --business-blue-dark: #0070F2;      /* Blue 7 - Hover/Active states */
+  --business-blue-light: #D1EFFF;     /* Blue 2 - Light backgrounds */
+  --business-blue-ultra-light: #F0F8FF; /* Blue 1 - Ultra light backgrounds */
+
+  /* Secondary Colors */
+  --business-teal: #049F9A;           /* Teal 6 - Accent elements */
+  --business-teal-light: #B3E5E4;     /* Teal 3 - Light accents */
+  --business-teal-ultra-light: #E6F4F4; /* Teal 1 - Ultra light */
+
+  --business-green: #36A41D;          /* Green 6 - Success states */
+  --business-green-light: #C5E6BE;    /* Green 3 - Light success */
+
+  --business-mango: #E76500;          /* Mango 6 - Warning states */
+  --business-mango-light: #F5D5B8;    /* Mango 3 - Light warning */
+
+  --business-red: #EE3939;            /* Red 6 - Error states */
+  --business-red-light: #F8C8C8;      /* Red 3 - Light error */
+
+  /* Neutral Colors - Grey Family */
+  --business-grey: #A9B4BE;           /* Grey 4 - Borders, dividers */
+  --business-grey-light: #EAECEE;     /* Grey 2 - Light backgrounds */
+  --business-grey-ultra-light: #F5F6F7; /* Grey 1 - Ultra light */
+  --business-grey-dark: #5B738B;      /* Grey 6 - Secondary text */
+  --business-grey-darker: #1A2733;    /* Grey 10 - Primary text */
+
+  /* Accent Colors */
+  --business-raspberry: #FA4F96;      /* Raspberry 6 - KPI highlights */
+  --business-raspberry-light: #FDCDE7; /* Raspberry 3 - Light highlights */
+
+  --business-indigo: #7858FF;         /* Indigo 6 - Chart elements */
+  --business-indigo-light: #DDD5FF;   /* Indigo 3 - Light chart areas */
+
+  --business-pink: #F31DED;           /* Pink 6 - Special features */
+  --business-pink-light: #FCC5FB;     /* Pink 3 - Light special */
+
+  /* Semantic Aliases */
+  --primary: var(--business-blue);
+  --primary-dark: var(--business-blue-dark);
+  --primary-light: var(--business-blue-light);
+
+  --secondary: var(--business-teal);
+  --secondary-light: var(--business-teal-light);
+
+  --success: var(--business-green);
+  --success-light: var(--business-green-light);
+
+  --warning: var(--business-mango);
+  --warning-light: var(--business-mango-light);
+
+  --danger: var(--business-red);
+  --danger-light: var(--business-red-light);
+
+  /* Text Colors - Dark Theme */
+  --text-primary: #EAECEE;           /* Grey 2 - Light text for readability */
+  --text-secondary: #A9B4BE;         /* Grey 4 - Secondary text */
+  --text-muted: #5B738B;             /* Grey 6 - Muted text */
+  --text-inverse: #12171C;           /* Grey 11 - Dark text on light backgrounds */
+
+  /* Background Colors - Dark Theme */
+  --background-primary: #12171C;     /* Grey 11 - Primary dark background */
+  --background-secondary: #1A2733;   /* Grey 10 - Secondary dark background */
+  --background-tertiary: #00144A;    /* Blue 11 - Tertiary blue-dark background */
+  --background-accent: #002A86;      /* Blue 10 - Accent dark blue */
+
+  /* Border Colors - Dark Theme */
+  --border-light: #1A2733;          /* Grey 10 - Light borders for dark theme */
+  --border-medium: #475E75;         /* Grey 7 - Medium borders */
+  --border-dark: #A9B4BE;           /* Grey 4 - Darker borders for contrast */
+  --border-primary: var(--business-blue);
+  --border-ultra-light: #00144A;    /* Blue 11 - Ultra light borders */
+
+  /* Shadow Colors - Dark Theme */
+  --shadow-light: rgba(0, 0, 0, 0.2);
+  --shadow-medium: rgba(0, 0, 0, 0.3);
+  --shadow-dark: rgba(0, 0, 0, 0.4);
+
+  /* Spacing System (8px grid) */
+  --spacing-xs: 0.25rem;    /* 4px */
+  --spacing-sm: 0.5rem;     /* 8px */
+  --spacing-md: 1rem;       /* 16px */
+  --spacing-lg: 1.5rem;     /* 24px */
+  --spacing-xl: 2rem;       /* 32px */
+  --spacing-xxl: 3rem;      /* 48px */
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;     /* 4px */
+  --radius-md: 0.5rem;      /* 8px */
+  --radius-lg: 0.75rem;     /* 12px */
+  --radius-xl: 1rem;        /* 16px */
+
+  /* Typography */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --font-size-xs: 0.75rem;  /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-md: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem;  /* 20px */
+  --font-size-xxl: 1.5rem;  /* 24px */
+
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Z-index scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1010;
+  --z-fixed: 1020;
+  --z-modal-backdrop: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 1060;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background-color: var(--background-primary);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--font-size-xxl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4 { font-size: var(--font-size-md); }
+h5 { font-size: var(--font-size-sm); }
+h6 { font-size: var(--font-size-xs); }
+
+p {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+}
+
+/* Links */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  gap: var(--spacing-xs);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #FFFFFF;               /* Force white text for contrast */
+  border-color: var(--primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: #FFFFFF;               /* Maintain white text on hover */
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: #FFFFFF;               /* Force white text for contrast */
+  border-color: var(--secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--business-teal-dark, #038882);
+  border-color: var(--business-teal-dark, #038882);
+  color: #FFFFFF;               /* Maintain white text on hover */
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--primary);
+  color: #FFFFFF;               /* White text when filled */
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--background-tertiary);
+  color: var(--text-primary);
+}
+
+/* Form Controls */
+.form-control {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(27, 144, 255, 0.1);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+/* Cards */
+.card {
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px var(--shadow-light);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.card-body {
+  padding: var(--spacing-lg);
+}
+
+.card-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--background-secondary);
+  border-top: 1px solid var(--border-light);
+}
+
+/* Utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+
+.bg-primary { background-color: var(--primary); }
+.bg-secondary { background-color: var(--background-secondary); }
+.bg-light { background-color: var(--background-tertiary); }
+.bg-success { background-color: var(--success-light); }
+.bg-warning { background-color: var(--warning-light); }
+.bg-danger { background-color: var(--danger-light); }
+
+.border { border: 1px solid var(--border-light); }
+.border-primary { border-color: var(--primary); }
+.border-success { border-color: var(--success); }
+.border-warning { border-color: var(--warning); }
+.border-danger { border-color: var(--danger); }
+
+.rounded { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+
+.shadow { box-shadow: 0 1px 3px var(--shadow-light); }
+.shadow-md { box-shadow: 0 4px 6px var(--shadow-medium); }
+.shadow-lg { box-shadow: 0 10px 15px var(--shadow-dark); }
+
+/* Flexbox utilities */
+.d-flex { display: flex; }
+.d-inline-flex { display: inline-flex; }
+.flex-column { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.align-items-center { align-items: center; }
+.justify-content-center { justify-content: center; }
+.justify-content-between { justify-content: space-between; }
+
+/* Spacing utilities */
+.m-0 { margin: 0; }
+.m-1 { margin: var(--spacing-xs); }
+.m-2 { margin: var(--spacing-sm); }
+.m-3 { margin: var(--spacing-md); }
+.m-4 { margin: var(--spacing-lg); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--spacing-xs); }
+.p-2 { padding: var(--spacing-sm); }
+.p-3 { padding: var(--spacing-md); }
+.p-4 { padding: var(--spacing-lg); }
+
+/* Position utilities */
+.position-relative { position: relative; }
+.position-absolute { position: absolute; }
+.position-fixed { position: fixed; }
+
+/* Display utilities */
+.d-none { display: none; }
+.d-block { display: block; }
+.d-inline { display: inline; }
+.d-inline-block { display: inline-block; }
+
+/* WebI-specific styles */
+.webi-panel {
+  background: var(--background-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+}
+
+.webi-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: var(--text-inverse);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.webi-drop-zone {
+  border: 2px dashed var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  transition: all var(--transition-normal);
+}
+
+.webi-drop-zone:hover,
+.webi-drop-zone.drag-over {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.webi-field-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  cursor: grab;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.webi-field-item:hover {
+  background-color: var(--secondary-light);
+  border-color: var(--secondary);
+  transform: translateX(2px);
+}
+
+.webi-field-item:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.webi-field-item.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
