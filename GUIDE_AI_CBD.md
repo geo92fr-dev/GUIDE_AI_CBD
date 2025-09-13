@@ -1,7 +1,7 @@
 # 🤖 GUIDE_AI_CBD - Check Before Doing
 
 > **GUIDE_AI_CBD : Guide de collaboration optimisée Humain ↔ IA (Projet Générique)**  
-> Version: 1.13 | Date: 13/09/2025
+> Version: 1.14 | Date: 13/09/2025
 
 ## 🗂️ Sommaire
 
@@ -13,6 +13,7 @@
 - [Dette & Refactor](#🧹-dette--refactor)
 - [Capitalisation & Playbooks](#📘-capitalisation--playbooks)
 - [Interface & Dialogue](#🎨-interface--dialogue)
+- [Visualisation & Diagrammes](#📊-visualisation--diagrammes)
 - [Phase 1 : Analyse du contexte et du prompt](#🔍-phase-1--analyse-du-contexte-et-du-prompt)
 - [Phase 2 : Validations de sécurité](#🚨-phase-2--validations-de-securite)
 - [Phase 3 : Cohérence architecturale](#🏗️-phase-3--coherence-architecturale)
@@ -764,6 +765,78 @@ Une grammaire visuelle cohérente aide à identifier rapidement le type d'inform
 
 ---
 
+## 📊 Visualisation & Diagrammes
+
+### 🎯 Objectif
+Utiliser des diagrammes pour clarifier des flux complexes, des architectures ou des séquences d'événements. L'intégration de [Mermaid.js](https://mermaid.js.org/) permet de générer ces diagrammes directement dans le Markdown, les maintenant synchronisés avec la documentation.
+
+### Syntaxe de base
+Les diagrammes sont créés dans des blocs de code avec le type `mermaid`.
+
+```mermaid
+graph TD;
+    A[Début] --> B{Condition?};
+    B -->|Oui| C[Action 1];
+    B -->|Non| D[Action 2];
+    C --> E[Fin];
+    D --> E[Fin];
+```
+
+### Cas d'usage
+
+#### 1. Diagramme de séquence pour un flux d'authentification
+
+Permet de visualiser les interactions entre l'utilisateur, le frontend et le backend.
+
+<details>
+<summary>Cliquez pour voir l'exemple de diagramme de séquence</summary>
+
+```mermaid
+sequenceDiagram
+    participant Utilisateur
+    participant Frontend
+    participant Backend
+    participant BaseDeDonnées
+
+    Utilisateur->>+Frontend: Remplit le formulaire de login
+    Frontend->>+Backend: POST /api/login (email, password)
+    Backend->>+BaseDeDonnées: Récupérer l'utilisateur par email
+    BaseDeDonnées-->>-Backend: Utilisateur trouvé
+    Backend-->>-Frontend: Token JWT
+    Frontend-->>-Utilisateur: Redirection vers le tableau de bord
+```
+</details>
+
+#### 2. Organigramme pour un processus de décision
+
+Utile pour représenter la logique d'une fonction ou d'un script.
+
+<details>
+<summary>Cliquez pour voir l'exemple d'organigramme</summary>
+
+```mermaid
+flowchart LR
+    subgraph "Processus de validation de commande"
+        A(Réception commande) --> B{Stock disponible?};
+        B -- Oui --> C[Réserver le stock];
+        C --> D{Paiement autorisé?};
+        B -- Non --> E[Notifier rupture de stock];
+        D -- Oui --> F[Confirmer la commande];
+        D -- Non --> G[Annuler la réservation];
+        G --> H[Notifier échec paiement];
+        F --> I[Préparer l'expédition];
+    end
+```
+</details>
+
+### ✅ Checklist pour les diagrammes
+- [ ] Le diagramme a un titre ou est dans une section qui explique son objectif.
+- [ ] La syntaxe Mermaid est valide.
+- [ ] Le diagramme est suffisamment simple pour être lisible. Pour les flux très complexes, envisager de le diviser en plusieurs diagrammes.
+- [ ] Le diagramme est utilisé pour clarifier, pas pour décorer. Il doit apporter une valeur ajoutée à la compréhension.
+
+---
+
 ##  Exemples pratiques de collaboration optimisée
 
 ### 🎯 Cas 1: Création d'un fichier (Exemple générique: Page de connexion)
@@ -930,6 +1003,7 @@ Pour éviter ce problème : [Explication de la bonne pratique]
 | 13/09/2025 | 1.11 | Ajout section Interface & Dialogue (communication améliorée) |
 | 13/09/2025 | 1.12 | Ajout sous-sections Gestion Contexte & Grammaire Visuelle |
 | 13/09/2025 | 1.13 | Fusion Phase 7 dans section Interface & Dialogue |
+| 13/09/2025 | 1.14 | Ajout section Visualisation & Diagrammes (Mermaid.js) |
 
 ---
 
