@@ -61,6 +61,21 @@ class WidgetLibrary extends HTMLElement {
         this.bindEvents();
     }
 
+    /**
+     * Get widget filename based on widget type
+     */
+    getWidgetFileName(widgetId) {
+        const fileNameMap = {
+            'bar-chart': 'widget_bar-chart_v1.0.js',
+            'line-chart': 'widget_line-chart_v1.0.js',
+            'pie-chart': 'widget_pie-chart_v1.0.js',
+            'table': 'widget_table_v1.0.js',
+            'kpi-card': 'widget_kpi-card_v1.0.js'
+        };
+        
+        return fileNameMap[widgetId] || `widget_${widgetId}_v1.0.js`;
+    }
+
     render() {
         const template = `
             <style>
@@ -137,6 +152,18 @@ class WidgetLibrary extends HTMLElement {
                     margin-bottom: var(--spacing-sm, 8px);
                 }
 
+                .widget-filename {
+                    font-size: 0.7em;
+                    color: var(--text-disabled, #6B7680);
+                    font-family: 'Courier New', monospace;
+                    background: var(--background-primary, #12171C);
+                    padding: 2px 6px;
+                    border-radius: var(--radius-sm, 4px);
+                    border: 1px solid var(--border-light, #1A2733);
+                    margin-bottom: var(--spacing-xs, 4px);
+                    display: inline-block;
+                }
+
                 .add-widget-btn {
                     position: absolute;
                     top: var(--spacing-sm, 8px);
@@ -193,6 +220,10 @@ class WidgetLibrary extends HTMLElement {
                 
                 <div class="widget-description">
                     ${widget.description}
+                </div>
+                
+                <div class="widget-filename">
+                    📄 ${this.getWidgetFileName(widget.id)}
                 </div>
             </div>
         `).join('');
