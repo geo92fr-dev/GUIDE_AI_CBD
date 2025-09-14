@@ -1,3 +1,7 @@
+#right-panel-2, .right-panel-2, .data-source-container {
+  pointer-events: auto !important;
+  z-index: 99999 !important;
+}
 /**
  * 🎨 Business Theme - Based on COLOR.md palette
  * 
@@ -417,4 +421,41 @@ a:hover {
 .webi-field-item.dragging {
   opacity: 0.5;
   transform: rotate(2deg);
+}
+
+/* Version Badge */
+.version-badge {
+    font-size: 0.7em;
+    background: rgba(255,255,255,0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+}
+
+/* Ajout style dédié pour le bouton Feeding auto demo */
+/* Forcer la cliquabilité et la visibilité du bouton Feeding auto demo */
+#feeding-demo-btn {
+  position: relative !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  background: #1B90FF !important;
+  color: #fff !important;
+  border: 2px solid #1B90FF !important;
+  font-weight: bold !important;
+  margin-top: 12px !important;
+  width: 100% !important;
+  font-size: 1em !important;
+}
+
+/* Canvas Controls */
+.canvas-selector {
+  margin-right: 12px;
+}
+
+.data-controls {
+  margin-left: auto;
+}
+
+.canvas-hidden {
+  display: none;
 }

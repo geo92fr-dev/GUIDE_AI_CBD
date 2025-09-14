@@ -594,11 +594,6 @@ class FeedingPanel extends HTMLElement {
         const hasSelectedWidget = this.selectedWidget && this.selectedWidget !== '';
         const canApply = hasAssignments && hasSelectedWidget;
         
-        const isEditing = this.editingWidget !== null;
-        const buttonText = isEditing ? 
-            (canCreateWidget ? '💾 Update Widget' : '⏳ Need Data') :
-            (canCreateWidget ? '✨ Create Widget' : '⏳ Need Data');
-            
         return `
             <div class="config-actions">
                 <div class="action-row">
@@ -610,15 +605,7 @@ class FeedingPanel extends HTMLElement {
                         🗑️ Clear All
                     </button>
                 </div>
-                
                 ${this.renderFeedbackMessage()}
-                
-                <div class="action-row">
-                    <button class="btn-config create-widget-btn ${canCreateWidget ? 'primary' : ''}" 
-                            ${canCreateWidget ? '' : 'disabled'}>
-                        ${buttonText}
-                    </button>
-                </div>
             </div>
         `;
     }
@@ -698,10 +685,7 @@ class FeedingPanel extends HTMLElement {
                 this.applyDataToWidget();
             }
             
-            // Create widget button
-            if (e.target.classList.contains('create-widget-btn') && !e.target.disabled) {
-                this.createWidget();
-            }
+            // ...existing code...
         });
 
         // Configure drop zones

@@ -80,7 +80,7 @@ class DashboardCanvasEntity extends HTMLElement {
         
         try {
             console.log('📁 Canvas: Loading existing entities');
-            this.entities = await this.widgetManager.getAll();
+            this.entities = await this.widgetManager.getAllWidgets();
             console.log('✅ Canvas: Loaded', this.entities.length, 'entities');
         } catch (error) {
             console.error('❌ Canvas: Failed to load entities:', error);

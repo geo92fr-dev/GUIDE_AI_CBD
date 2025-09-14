@@ -12,46 +12,11 @@ class WidgetLibrary extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         
-        // State
+        // State - All widgets will be loaded dynamically
         this.selectedWidget = null;
-        this.availableWidgets = [
-            {
-                id: 'bar-chart',
-                name: 'Bar Chart',
-                icon: '📊',
-                description: 'Compare values across categories',
-                requirements: { dimensions: 1, measures: 1 },
-                size: { width: 6, height: 4 },
-                type: 'chart'
-            },
-            {
-                id: 'line-chart',
-                name: 'Line Chart',
-                icon: '📈',
-                description: 'Show trends over time',
-                requirements: { dimensions: 1, measures: 1 },
-                size: { width: 8, height: 4 },
-                type: 'chart'
-            },
-            {
-                id: 'pie-chart',
-                name: 'Pie Chart',
-                icon: '🥧',
-                description: 'Show proportions of a whole',
-                requirements: { dimensions: 1, measures: 1 },
-                size: { width: 4, height: 4 },
-                type: 'chart'
-            },
-            {
-                id: 'table',
-                name: 'Table',
-                icon: '📋',
-                description: 'Display detailed data',
-                requirements: { dimensions: 0, measures: 0 },
-                size: { width: 12, height: 6 },
-                type: 'table'
-            }
-        ];
+        this.availableWidgets = []; // Start empty, populate via discovery
+        this.eventsInitialized = false; // Protection contre events multiples
+        this.dynamicWidgetsLoaded = false; // Protection contre chargements multiples
         
         this.init();
     }
@@ -59,6 +24,97 @@ class WidgetLibrary extends HTMLElement {
     init() {
         this.render();
         this.bindEvents();
+        // Load widgets dynamically after initialization
+        this.loadDynamicWidgets();
+    }
+
+    /**
+     * Load widgets dynamically from discovery service
+     */
+    async loadDynamicWidgets() {
+        // Protection contre les chargements multiples
+        if (this.dynamicWidgetsLoaded) {
+            console.log('✅ Widget Library: Dynamic widgets already loaded, skipping');
+            return;
+        }
+        
+        try {
+            console.log('🔍 Widget Library: Loading dynamic widgets...');
+            
+            // Wait for discovery service to be available
+            if (window.widgetDiscovery) {
+                this.dynamicWidgetsLoaded = true; // Marquer avant le chargement
+                
+                const discoveredWidgets = await window.widgetDiscovery.discoverWidgets();
+                console.log('📦 Widget Library: Discovered widgets:', discoveredWidgets);
+                
+                // Convert discovered widgets to library format
+                this.availableWidgets = this.convertDiscoveredWidgets(discoveredWidgets);
+                
+                // Re-render with discovered widgets
+                this.render();
+                this.bindEvents();
+                
+                console.log('✅ Widget Library: Dynamic loading completed');
+            } else {
+                this.dynamicWidgetsLoaded = false; // Reset si pas disponible
+                console.warn('⚠️ Widget Library: Discovery service not available yet');
+                // Retry after a short delay
+                setTimeout(() => this.loadDynamicWidgets(), 1000);
+            }
+        } catch (error) {
+            this.dynamicWidgetsLoaded = false; // Reset en cas d'erreur
+            console.error('❌ Widget Library: Failed to load dynamic widgets:', error);
+        }
+    }
+
+    /**
+     * Convert discovered widget filenames to library format
+     */
+    convertDiscoveredWidgets(discoveredWidgets) {
+        const widgetMappings = {
+            'widget_bar-chart_v1.0.js': {
+                id: 'bar-chart', name: 'Bar Chart', icon: '📊',
+                description: 'Compare values across categories',
+                requirements: { dimensions: 1, measures: 1 },
+                size: { width: 6, height: 4 }, type: 'chart'
+            },
+            'widget_line-chart_v1.0.js': {
+                id: 'line-chart', name: 'Line Chart', icon: '📈',
+                description: 'Show trends over time',
+                requirements: { dimensions: 1, measures: 1 },
+                size: { width: 8, height: 4 }, type: 'chart'
+            },
+            'widget_pie-chart_v1.0.js': {
+                id: 'pie-chart', name: 'Pie Chart', icon: '🥧',
+                description: 'Show proportions of a whole',
+                requirements: { dimensions: 1, measures: 1 },
+                size: { width: 4, height: 4 }, type: 'chart'
+            },
+            'widget_table_v1.0.js': {
+                id: 'table', name: 'Table', icon: '📋',
+                description: 'Display detailed data',
+                requirements: { dimensions: 0, measures: 0 },
+                size: { width: 12, height: 6 }, type: 'table'
+            },
+            'widget_tile_v1.0.js': {
+                id: 'tile', name: 'KPI Tile', icon: '🎯',
+                description: 'Display key performance indicators',
+                requirements: { dimensions: 0, measures: 1 },
+                size: { width: 4, height: 3 }, type: 'kpi'
+            }
+        };
+
+        return discoveredWidgets
+            .map(widgetPath => {
+                const filename = widgetPath.split('/').pop();
+                return widgetMappings[filename];
+            })
+            .filter(widget => widget !== undefined)
+            .filter((widget, index, array) => 
+                // Éviter les doublons basés sur l'id
+                array.findIndex(w => w.id === widget.id) === index
+            );
     }
 
     /**
@@ -70,6 +126,7 @@ class WidgetLibrary extends HTMLElement {
             'line-chart': 'widget_line-chart_v1.0.js',
             'pie-chart': 'widget_pie-chart_v1.0.js',
             'table': 'widget_table_v1.0.js',
+            'tile': 'widget_tile_v1.0.js',
             'kpi-card': 'widget_kpi-card_v1.0.js'
         };
         
@@ -230,11 +287,18 @@ class WidgetLibrary extends HTMLElement {
     }
 
     bindEvents() {
+        // Protection contre les event listeners multiples
+        if (this.eventsInitialized) {
+            console.log('🔄 Widget Library: Events already bound, skipping');
+            return;
+        }
+        
         // Add widget button
         this.shadowRoot.addEventListener('click', (e) => {
             if (e.target.matches('[data-action="add-widget"]')) {
                 e.stopPropagation();
                 const widgetType = e.target.dataset.widgetType;
+                console.log('🎯 Widget Library: Click detected for widget:', widgetType);
                 this.addWidgetToCanvas(widgetType);
             }
         });
@@ -246,6 +310,9 @@ class WidgetLibrary extends HTMLElement {
                 this.handleDragStart(e, widgetItem);
             }
         });
+        
+        this.eventsInitialized = true;
+        console.log('✅ Widget Library: Events bound successfully');
     }
 
     handleDragStart(e, widgetItem) {
@@ -264,12 +331,16 @@ class WidgetLibrary extends HTMLElement {
 
     addWidgetToCanvas(widgetType) {
         console.log('🎯 Widget Library: Adding widget via click:', widgetType);
+        console.log('🔍 Widget Library: Available widgets:', this.availableWidgets);
+        console.log('🔍 Widget Library: Looking for widget with id:', widgetType);
         
         const widgetData = this.availableWidgets.find(w => w.id === widgetType);
         if (!widgetData) {
             console.error('❌ Widget Library: Widget type not found:', widgetType);
             return;
         }
+
+        console.log('✅ Widget Library: Found widget data:', widgetData);
 
         // Find canvas and call addEntity directly
         const canvas = document.querySelector('dashboard-canvas-entity');
@@ -291,6 +362,18 @@ class WidgetLibrary extends HTMLElement {
         } else {
             console.error('❌ Widget Library: Canvas not found or addEntity method missing');
         }
+    }
+
+    /**
+     * Refresh widgets library - called after dynamic widget discovery
+     */
+    refreshWidgets() {
+        console.log('🔄 Widget Library: Refreshing widgets display');
+        
+        // Reload dynamic widgets to ensure we have the latest
+        this.loadDynamicWidgets();
+        
+        console.log('✅ Widget Library: Refresh completed');
     }
 }
 

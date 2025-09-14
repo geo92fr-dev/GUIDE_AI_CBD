@@ -26,6 +26,9 @@
             overflow: hidden;
             background: var(--background-primary);
         }
+        .app-shell.canvas-demo-mode {
+            grid-template-columns: 250px 1fr 0px 280px;
+        }
         
         .app-header {
             grid-area: header;
@@ -274,12 +277,13 @@
             <div class="app-title">
                 <span class="app-icon">📊</span>
                 <span>WIDGETS Platform</span>
-                <span class="version-badge" style="font-size: 0.7em; background: rgba(255,255,255,0.2); padding: 0.2rem 0.5rem; border-radius: 10px;">MVP v1.0</span>
+                <span class="version-badge">MVP v1.0</span>
             </div>
             <div class="app-actions">
                 <button class="btn-header" id="save-dashboard">💾 Save</button>
                 <button class="btn-header" id="load-dashboard">📂 Load</button>
                 <button class="btn-header" id="export-dashboard">📤 Export</button>
+                <button class="btn-header" id="test-widget-discovery">🧪 Test Discovery</button>
                 <button class="btn-header" id="toggle-all-view">👁️ View All</button>
                 <button class="btn-header" id="toggle-all-info">ℹ️ Info All</button>
                 <button class="btn-header" id="help-toggle">❓ Help</button>
@@ -306,16 +310,21 @@
                     <span>Dashboard Canvas</span>
                 </div>
                 <div class="canvas-actions">
+                    <select id="canvas-type-selector" class="btn-header canvas-selector" title="Select canvas type">
+                        <option value="main" selected>🖼️ Canvas principal</option>
+                        <option value="demo">✨ Canvas démo (auto)</option>
+                    </select>
                     <button class="btn-header" id="clear-widgets" title="Clear all widgets">🗑️ Clear</button>
                     <button class="btn-header" id="export-canvas" title="Export canvas">📤 Export</button>
                 </div>
             </div>
             <!-- Dashboard Canvas Component - Entity System -->
-            <dashboard-canvas-entity></dashboard-canvas-entity>
+            <dashboard-canvas-entity id="main-canvas"></dashboard-canvas-entity>
+            <dashboard-canvas-demo-entity id="demo-canvas" class="canvas-hidden"></dashboard-canvas-demo-entity>
         </main>
         
         <!-- RIGHT PANEL 1: Feeding Panel (WebI Data Assignment) -->
-        <aside class="right-panel-1">
+    <aside class="right-panel-1" id="right-panel-1">
             <div class="panel-header">
                 <div class="panel-title">
                     <span class="panel-icon">⚙️</span>
@@ -331,16 +340,17 @@
             <!-- Data Source Selector -->
             <div class="data-source-container">
                 <label class="data-source-label">📊 Select Data Source:</label>
-                <select class="data-source-selector" id="data-source-selector">
-                    <option value="">Choose a dataset...</option>
-                    <option value="samples/sales-data.csv">📊 Sales Data</option>
-                    <option value="samples/marketing-data.csv">📈 Marketing Campaigns</option>
-                    <option value="samples/production-data.csv">🏭 Production Lines</option>
-                    <option value="samples/customer-orders.csv">🛒 Customer Orders</option>
-                    <option value="samples/stock-market-data.csv">💹 Stock Market</option>
-                    <option value="samples/finance-data.csv">💰 Finance Data</option>
-                    <option value="samples/hr-data.csv">👥 HR Data</option>
+                <select class="data-source-selector" id="data-source-selector" title="Select data source">
+                    <option value="" title="Choose a dataset...">Choose a dataset...</option>
+                    <option value="samples/sales-data.csv" title="Sales Data">📊 Sales Data</option>
+                    <option value="samples/marketing-data.csv" title="Marketing Campaigns">📈 Marketing Campaigns</option>
+                    <option value="samples/production-data.csv" title="Production Lines">🏭 Production Lines</option>
+                    <option value="samples/customer-orders.csv" title="Customer Orders">🛒 Customer Orders</option>
+                    <option value="samples/stock-market-data.csv" title="Stock Market">💹 Stock Market</option>
+                    <option value="samples/finance-data.csv" title="Finance Data">💰 Finance Data</option>
+                    <option value="samples/hr-data.csv" title="HR Data">👥 HR Data</option>
                 </select>
+                <button id="feeding-demo-btn" class="btn-header">⚡ Feeding auto demo</button>
             </div>
             
             <div class="panel-header">
@@ -355,7 +365,8 @@
     </div>
     
     <!-- Hidden file input for CSV loading -->
-    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+    <label for="csv-file-input" class="visually-hidden">Import CSV</label>
+    <input type="file" id="csv-file-input" accept=".csv" class="hidden-file-input" title="Import CSV">
     
     <!-- Core Data System -->
     <script src="src/data/data-parser.js"></script>
@@ -375,10 +386,17 @@
     <script src="src/components/dashboard-canvas-entity.js"></script>
     <script src="src/components/feeding-panel.js"></script>
     <script src="src/components/available-objects-panel.js"></script>
+    <script src="src/components/dashboard-canvas-demo-entity.js"></script>
     
     <!-- Widget Implementations -->
-    <script src="src/widgets/widget-base.js"></script>
-    <script src="src/widgets/tile_info.js"></script>
+    <!-- <script src="src/widgets/widget-base.js"></script> Fichier manquant, désactivé -->
+    <!-- <script src="src/widgets/tile_info.js"></script> Dépend de WidgetBase, désactivé temporairement -->
+    
+    <!-- Widget Discovery Service -->
+    <script src="src/services/widget-discovery.js"></script>
+    
+    <!-- Widget Discovery Tester -->
+    <script src="src/utils/widget-discovery-tester.js"></script>
     
     <!-- Unified System Integration -->
     <script src="src/migration/unified-system.js"></script>
@@ -389,23 +407,154 @@
     <script>
         // Application Initialization with Unified System
         document.addEventListener('DOMContentLoaded', function() {
+            // DIAGNOSTIC GLOBAL : log tous les clics sur la page
+            document.body.addEventListener('click', function(e) {
+                console.log('[DIAG] Clic détecté sur', e.target, 'id:', e.target.id);
+            }, true);
+            // Canvas type selector logic
+            const canvasTypeSelector = document.getElementById('canvas-type-selector');
+            const mainCanvas = document.getElementById('main-canvas');
+            const demoCanvas = document.getElementById('demo-canvas');
+            const rightPanel1 = document.getElementById('right-panel-1');
+            const appShell = document.querySelector('.app-shell');
+            const feedingDemoBtn = document.getElementById('feeding-demo-btn');
+            // Par défaut, afficher le canvas principal au chargement
+            mainCanvas.style.display = '';
+            demoCanvas.style.display = 'none';
+            demoCanvas.classList.add('canvas-hidden'); // Cacher le canvas demo
+            rightPanel1.style.display = '';
+            appShell.classList.remove('canvas-demo-mode');
+            canvasTypeSelector.value = 'main';
+            
+            // Ne pas initialiser le canvas démo au chargement - il sera initialisé si l'utilisateur le sélectionne
+            console.log('[INIT] Canvas principal sélectionné par défaut');
+            
+            if (canvasTypeSelector.value === 'demo' && feedingDemoBtn) {
+                feedingDemoBtn.style.display = '';
+            } else if (feedingDemoBtn) {
+                feedingDemoBtn.style.display = 'none';
+            }
+            canvasTypeSelector.addEventListener('change', function() {
+                console.log('[CANVAS SWITCH] Switching to:', canvasTypeSelector.value);
+                if (canvasTypeSelector.value === 'main') {
+                    mainCanvas.style.display = '';
+                    demoCanvas.style.display = 'none';
+                    demoCanvas.classList.add('canvas-hidden'); // Masquer avec la classe
+                    rightPanel1.style.display = '';
+                    appShell.classList.remove('canvas-demo-mode');
+                    if (feedingDemoBtn) feedingDemoBtn.style.display = 'none';
+                } else {
+                    mainCanvas.style.display = 'none';
+                    demoCanvas.style.display = '';
+                    demoCanvas.classList.remove('canvas-hidden'); // Supprimer la classe qui cache
+                    rightPanel1.style.display = 'none';
+                    appShell.classList.add('canvas-demo-mode');
+                    if (feedingDemoBtn) feedingDemoBtn.style.display = '';
+                    
+                    // Initialiser le canvas démo seulement maintenant
+                    console.log('🎨 Demo canvas selected - initializing...');
+                    window.initializeDemoCanvas().then(success => {
+                        if (success) {
+                            console.log('✅ Demo canvas ready to use');
+                        } else {
+                            console.error('❌ Demo canvas initialization failed');
+                        }
+                    });
+                }
+            });
             console.log('🚀 WIDGETS Platform MVP v1.0 starting...');
             
             // Initialize Unified Widget Platform
             window.WidgetPlatform.init();
             
-            // Auto-load unified widgets for toggle functionality
-            setTimeout(async () => {
+            // Protection globale contre chargements multiples
+            if (window.widgetsLoadingInProgress) {
+                console.log('⚠️ Widgets loading already in progress, skipping');
+                return;
+            }
+            window.widgetsLoadingInProgress = true;
+            
+            // Function to initialize demo canvas on-demand
+            window.initializeDemoCanvas = async function() {
+                console.log('🔄 Starting demo canvas initialization...');
                 try {
-                    console.log('🔄 Loading unified widgets for toggle functionality...');
-                    const canvas = document.querySelector('dashboard-canvas-entity');
-                    if (canvas && canvas.widgetManager) {
-                        // Load bar chart unified widget
-                        await canvas.widgetManager.loadUnifiedWidget('src/widgets/widget_bar-chart_v1.0.js');
-                        console.log('✅ Unified widgets loaded successfully');
+                    // Vérifier si déjà initialisé
+                    const demoCanvas = document.getElementById('demo-canvas');
+                    if (demoCanvas && demoCanvas.hasAttribute('data-initialized')) {
+                        console.log('✅ Demo canvas already initialized');
+                        return true;
+                    }
+                    
+                    // S'assurer que les widgets sont chargés
+                    if (!window.widgetDiscovery || window.widgetDiscovery.getLoadedWidgets().size === 0) {
+                        console.log('🔄 Loading widgets first...');
+                        const discoveredWidgets = await window.widgetDiscovery.discoverWidgets();
+                        console.log(`📦 Discovered ${discoveredWidgets.length} widgets for demo`);
+                        
+                        const canvas = document.querySelector('dashboard-canvas-entity');
+                        if (canvas && canvas.widgetManager) {
+                            await window.widgetDiscovery.loadAllDiscoveredWidgets(canvas.widgetManager);
+                        }
+                    }
+                    
+                    // Initialiser le canvas démo
+                    if (demoCanvas && typeof demoCanvas.init === 'function') {
+                        console.log('🎨 Initializing demo canvas...');
+                        await demoCanvas.init();
+                        demoCanvas.setAttribute('data-initialized', 'true');
+                        console.log('✅ Demo canvas initialized successfully');
+                        return true;
                     }
                 } catch (error) {
-                    console.warn('⚠️ Could not load unified widgets:', error.message);
+                    console.error('❌ Demo canvas initialization failed:', error);
+                    return false;
+                }
+            };
+            
+            // Load basic widgets for the widget library only (protection renforcée)
+            setTimeout(async () => {
+                if (window.widgetsLoaded || window.widgetsCurrentlyLoading) {
+                    console.log('✅ Widgets already loaded or loading, skipping');
+                    return;
+                }
+                
+                try {
+                    console.log('🔄 Loading basic widgets for library...');
+                    window.widgetsCurrentlyLoading = true; // Marquer comme en cours
+                    
+                    // Découvrir les widgets sans les charger automatiquement
+                    const discoveredWidgets = await window.widgetDiscovery.discoverWidgets();
+                    console.log(`📦 Discovered ${discoveredWidgets.length} widgets for library:`, discoveredWidgets);
+                    
+                    const canvas = document.querySelector('dashboard-canvas-entity');
+                    if (canvas && canvas.widgetManager) {
+                        // Charger tous les widgets découverts
+                        const loadResults = await window.widgetDiscovery.loadAllDiscoveredWidgets(canvas.widgetManager);
+                        console.log('✅ Basic widget loading completed:', loadResults);
+                        
+                        // Log des widgets chargés pour diagnostic
+                        const loadedWidgets = window.widgetDiscovery.getLoadedWidgets();
+                        console.log('� Successfully loaded widgets:', loadedWidgets);
+                        
+                        // Rafraîchir la bibliothèque de widgets pour afficher les nouveaux widgets
+                        const widgetLibrary = document.querySelector('widget-library');
+                        if (widgetLibrary && typeof widgetLibrary.refreshWidgets === 'function') {
+                            widgetLibrary.refreshWidgets();
+                            console.log('🔄 Widget library refreshed');
+                        }
+                        
+                        // Initialiser le canvas démo seulement si sélectionné explicitement
+                        // Ne plus initialiser automatiquement au démarrage
+                        console.log('✅ Widget library ready - demo canvas will be initialized only when selected');
+                        window.widgetsLoaded = true; // Marquer comme terminé
+                        window.widgetsCurrentlyLoading = false;
+                    } else {
+                        console.warn('⚠️ Canvas not ready, widgets will be loaded on-demand');
+                        window.widgetsCurrentlyLoading = false;
+                    }
+                } catch (error) {
+                    console.error('❌ Basic widget loading failed:', error);
+                    window.widgetsCurrentlyLoading = false; // Reset en cas d'erreur
                 }
             }, 1000);
             
@@ -432,7 +581,21 @@
             });
             
             document.getElementById('help-toggle')?.addEventListener('click', () => {
-                alert('📖 WIDGETS Platform MVP v1.0\\n\\n🔄 NEW: View/Info Toggle!\\n• Each widget has a toggle button to switch between View and Info modes\\n• View mode: See the actual widget rendering\\n• Info mode: See widget metadata and configuration\\n• Use "👁️ View All" / "ℹ️ Info All" to toggle all widgets at once\\n\\n📋 Basic Usage:\\n1. Load CSV data using the 📤 button\\n2. Drag & drop fields to configure widgets\\n3. Build your dashboard!\\n4. Toggle between View and Info modes\\n\\nWebI-compatible workflow for easy adoption.');
+                alert('📖 WIDGETS Platform MVP v1.0\\n\\n🔄 NEW: Dynamic Widget Discovery!\\n• The system now automatically discovers all widgets in the widgets/ folder\\n• Use "🧪 Test Discovery" to test the discovery system\\n• Console commands: testWidgetDiscovery(), quickTestWidgets(), showWidgetState()\\n\\n🔄 View/Info Toggle!\\n• Each widget has a toggle button to switch between View and Info modes\\n• View mode: See the actual widget rendering\\n• Info mode: See widget metadata and configuration\\n• Use "👁️ View All" / "ℹ️ Info All" to toggle all widgets at once\\n\\n📋 Basic Usage:\\n1. Load CSV data using the data source selector\\n2. Drag & drop fields to configure widgets\\n3. Build your dashboard!\\n4. Toggle between View and Info modes\\n\\nWebI-compatible workflow for easy adoption.');
+            });
+            
+            document.getElementById('test-widget-discovery')?.addEventListener('click', async () => {
+                console.log('🧪 Running widget discovery test...');
+                if (window.widgetTester) {
+                    const results = await window.widgetTester.runFullTest();
+                    if (results.success) {
+                        alert(`🧪 Widget Discovery Test Results:\\n\\n✅ Discovered: ${results.discovered} widgets\\n✅ Loaded: ${results.loaded} widgets\\n❌ Failed: ${results.failed} widgets\\n📈 Load Rate: ${results.stats.loadRate}\\n🏷️ Types: ${results.stats.types.join(', ')}\\n\\nCheck console for detailed information.`);
+                    } else {
+                        alert(`❌ Widget Discovery Test Failed:\\n\\n${results.error}\\n\\nCheck console for more details.`);
+                    }
+                } else {
+                    alert('❌ Widget Discovery Tester not available');
+                }
             });
             
             document.getElementById('clear-widgets')?.addEventListener('click', () => {
@@ -574,6 +737,119 @@
             });
             
             document.getElementById('csv-file-input')?.addEventListener('change', async (event) => {
+        // Feeding auto demo logic: handler toujours actif
+        // Handler Feeding auto demo : attachement garanti après DOMContentLoaded
+
+        // Handler Feeding auto demo : attachement robuste avec MutationObserver
+
+        // Event delegation : écouteur sur le parent du bouton
+        document.body.addEventListener('click', async function(e) {
+            const btn = e.target.closest('#feeding-demo-btn');
+            if (!btn) return;
+            e.preventDefault();
+            console.log('[FeedingDemo] CLICK détecté sur le bouton Feeding auto demo (event delegation)');
+            const demoCanvasEl = document.getElementById('demo-canvas');
+            const dataSourceSelector = document.getElementById('data-source-selector');
+            let datasetUrl = '';
+            if (dataSourceSelector && dataSourceSelector.options.length > 1) {
+                datasetUrl = dataSourceSelector.options[dataSourceSelector.selectedIndex].value;
+            } else {
+                datasetUrl = 'samples/marketing-data.csv';
+            }
+            let sampleData = [];
+            try {
+                const response = await fetch(datasetUrl);
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+                const headers = lines[0].split(',');
+                sampleData = lines.slice(1).map(line => {
+                    const values = line.split(',');
+                    const obj = {};
+                    headers.forEach((h, i) => { obj[h] = values[i]; });
+                    return obj;
+                });
+            } catch (err) {
+                console.warn('[FeedingDemo] Impossible de charger les données du dataset:', err);
+            }
+            // Feeding auto pour tous les widgets du canvas démo
+            if (demoCanvasEl && demoCanvasEl.shadowRoot) {
+                const widgetTags = [
+                    'bar-chart-widget-unified',
+                    'line-chart-widget-unified',
+                    'pie-chart-widget-unified',
+                    'table-widget-unified'
+                ];
+                widgetTags.forEach(tag => {
+                    const widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
+                    if (!widgetEl) {
+                        console.warn(`[FeedingDemo] Widget <${tag}.demo-widget> introuvable dans le shadowRoot du canvas démo.`);
+                        return;
+                    }
+                    console.log(`[FeedingDemo] Widget ciblé: <${tag}.demo-widget>`, widgetEl);
+                    if (typeof widgetEl.updateData === 'function') {
+                        console.log(`[FeedingDemo] Appel updateData sur <${tag}> avec`, sampleData.slice(0,2));
+                        widgetEl.updateData(sampleData);
+                    } else if (typeof widgetEl.initializeWithEntity === 'function') {
+                        console.log(`[FeedingDemo] Appel initializeWithEntity sur <${tag}> avec`, sampleData.slice(0,2));
+                        widgetEl.initializeWithEntity({ configuration: { sampleData } });
+                    } else {
+                        console.warn(`[FeedingDemo] Widget <${tag}> ne possède ni updateData ni initializeWithEntity.`);
+                    }
+                });
+            }
+        });
+
+        // Ajout : feeding auto sur changement de dataset (inchangé)
+        setTimeout(() => {
+            const dataSourceSelector = document.getElementById('data-source-selector');
+            if (dataSourceSelector) {
+                dataSourceSelector.addEventListener('change', async () => {
+                    const demoCanvasEl = document.getElementById('demo-canvas');
+                    let datasetUrl = '';
+                    if (dataSourceSelector && dataSourceSelector.options.length > 1) {
+                        datasetUrl = dataSourceSelector.options[dataSourceSelector.selectedIndex].value;
+                    } else {
+                        datasetUrl = 'samples/marketing-data.csv';
+                    }
+                    let sampleData = [];
+                    try {
+                        const response = await fetch(datasetUrl);
+                        const csvText = await response.text();
+                        const lines = csvText.trim().split('\n');
+                        const headers = lines[0].split(',');
+                        sampleData = lines.slice(1).map(line => {
+                            const values = line.split(',');
+                            const obj = {};
+                            headers.forEach((h, i) => { obj[h] = values[i]; });
+                            return obj;
+                        });
+                    } catch (err) {
+                        console.warn('[FeedingDemo] Impossible de charger les données du dataset:', err);
+                    }
+                    // Feeding auto pour tous les widgets du canvas démo
+                    if (demoCanvasEl && demoCanvasEl.shadowRoot) {
+                        const widgetTags = [
+                            'bar-chart-widget-unified',
+                            'line-chart-widget-unified',
+                            'pie-chart-widget-unified',
+                            'table-widget-unified'
+                        ];
+                        widgetTags.forEach(tag => {
+                            const widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
+                            if (widgetEl && typeof widgetEl.updateData === 'function') {
+                                widgetEl.updateData(sampleData);
+                                console.log(`[FeedingDemo] updateData appelé sur <${tag}>`, sampleData);
+                            } else if (widgetEl && typeof widgetEl.initializeWithEntity === 'function') {
+                                widgetEl.initializeWithEntity({ configuration: { sampleData } });
+                                console.log(`[FeedingDemo] initializeWithEntity appelé sur <${tag}>`, sampleData);
+                            } else {
+                                console.warn(`[FeedingDemo] Widget <${tag}> non initialisé (méthode manquante)`);
+                            }
+                        });
+                    }
+                });
+            }
+        }, 0);
                 const file = event.target.files[0];
                 if (file && file.name.toLowerCase().endsWith('.csv')) {
                     try {
@@ -601,5 +877,128 @@
             console.log(`⚡ App loaded in ${Math.round(loadTime)}ms`);
         });
     </script>
+        <!-- Feeding auto demo event delegation : installation globale -->
+        <script>
+        console.log('[FeedingDemo] Installation globale de l\'event delegation pour le bouton Feeding auto demo');
+        document.body.addEventListener('click', async function(e) {
+                    const btn = e.target.closest('#feeding-demo-btn');
+                    if (!btn) return;
+                    e.preventDefault();
+                    console.log('[FeedingDemo] CLICK détecté sur le bouton Feeding auto demo (event delegation GLOBAL)');
+                    const demoCanvasEl = document.getElementById('demo-canvas');
+                    const dataSourceSelector = document.getElementById('data-source-selector');
+                    let datasetUrl = '';
+                    if (dataSourceSelector && dataSourceSelector.options.length > 1) {
+                        datasetUrl = dataSourceSelector.options[dataSourceSelector.selectedIndex].value;
+                    } else {
+                        datasetUrl = 'samples/marketing-data.csv';
+                    }
+                    let sampleData = [];
+                                                    let widgetData = {
+                                                        'bar-chart-widget-unified': [],
+                                                        'line-chart-widget-unified': [],
+                                                        'pie-chart-widget-unified': [],
+                                                        'table-widget-unified': []
+                                                    };
+                                                    try {
+                                                        const response = await fetch(datasetUrl);
+                                                        const csvText = await response.text();
+                                                        const lines = csvText.trim().split('\n');
+                                                        const headers = lines[0].split(',');
+                                                        // Construction d'un sampleData générique (pour table)
+                                                        sampleData = lines.slice(1).map(line => {
+                                                            const values = line.split(',');
+                                                            const obj = {};
+                                                            headers.forEach((h, i) => {
+                                                                obj[h] = values[i];
+                                                            });
+                                                            return obj;
+                                                        });
+                                                        widgetData['table-widget-unified'] = sampleData;
+                                                                                                                // Mapping générique via autoWidgetFeeder
+                                                                                                                import('./src/services/autoWidgetFeeder.js').then(({ autoMapDataToWidgetSchema }) => {
+                                                                                                                    const widgetSchemas = {
+                                                                                                                        'bar-chart-widget-unified': window.bar_chart_WIDGET_DEFINITION?.metadataSchema,
+                                                                                                                        'line-chart-widget-unified': window.line_chart_WIDGET_DEFINITION?.metadataSchema,
+                                                                                                                        'pie-chart-widget-unified': window.pie_chart_WIDGET_DEFINITION?.metadataSchema
+                                                                                                                    };
+                                                                                                                    Object.entries(widgetSchemas).forEach(([tag, schema]) => {
+                                                                                                                        if (!schema) return;
+                                                                                                                        widgetData[tag] = autoMapDataToWidgetSchema(sampleData, schema);
+                                                                                                                    });
+                                                                                                                    // Feeding auto pour tous les widgets du canvas démo (inchangé)
+                                                                                                                    if (demoCanvasEl && demoCanvasEl.shadowRoot) {
+                                                                                                                        const widgetTags = [
+                                                                                                                            'bar-chart-widget-unified',
+                                                                                                                            'line-chart-widget-unified',
+                                                                                                                            'pie-chart-widget-unified',
+                                                                                                                            'table-widget-unified'
+                                                                                                                        ];
+                                                                                                                        widgetTags.forEach(tag => {
+                                                                                                                            let widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
+                                                                                                                            if (!widgetEl) {
+                                                                                                                                widgetEl = demoCanvasEl.shadowRoot.querySelector(tag);
+                                                                                                                            }
+                                                                                                                            if (!widgetEl) {
+                                                                                                                                console.warn(`[FeedingDemo] Widget <${tag}> introuvable dans le shadowRoot du canvas démo.`);
+                                                                                                                                return;
+                                                                                                                            }
+                                                                                                                            const dataToFeed = widgetData[tag] && widgetData[tag].length ? widgetData[tag] : sampleData;
+                                                                                                                            console.log(`[FeedingDemo][DATA] Données injectées dans <${tag}> :`, JSON.stringify(dataToFeed));
+                                                                                                                            console.log(`[FeedingDemo] Widget ciblé: <${tag}>`, widgetEl);
+                                                                                                                            if (typeof widgetEl.updateData === 'function') {
+                                                                                                                                console.log(`[FeedingDemo] Appel updateData sur <${tag}> avec`, dataToFeed.slice(0,2));
+                                                                                                                                widgetEl.updateData(dataToFeed);
+                                                                                                                            } else if (typeof widgetEl.initializeWithEntity === 'function') {
+                                                                                                                                console.log(`[FeedingDemo] Appel initializeWithEntity sur <${tag}> avec`, dataToFeed.slice(0,2));
+                                                                                                                                widgetEl.initializeWithEntity({ configuration: { sampleData: dataToFeed } });
+                                                                                                                            } else {
+                                                                                                                                console.warn(`[FeedingDemo] Widget <${tag}> ne possède ni updateData ni initializeWithEntity.`);
+                                                                                                                            }
+                                                                                                                        });
+                                                                                                                    }
+                                                                                                                });
+                                                    } catch (err) {
+                                                        console.warn('[FeedingDemo] Impossible de charger les données du dataset:', err);
+                                                    }
+                    // Feeding auto pour tous les widgets du canvas démo
+                    if (demoCanvasEl && demoCanvasEl.shadowRoot) {
+                        const widgetTags = [
+                            'bar-chart-widget-unified',
+                            'line-chart-widget-unified',
+                            'pie-chart-widget-unified',
+                            'table-widget-unified'
+                        ];
+                        widgetTags.forEach(tag => {
+                            let widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
+                            if (!widgetEl) {
+                                // Fallback : chercher par tag seul
+                                widgetEl = demoCanvasEl.shadowRoot.querySelector(tag);
+                            }
+                            if (!widgetEl) {
+                                console.warn(`[FeedingDemo] Widget <${tag}> introuvable dans le shadowRoot du canvas démo.`);
+                                return;
+                            }
+                            // Sélectionner le jeu de données adapté
+                            const dataToFeed = widgetData[tag] && widgetData[tag].length ? widgetData[tag] : sampleData;
+                            console.log(`[FeedingDemo][DATA] Données injectées dans <${tag}> :`, JSON.stringify(dataToFeed));
+                            console.log(`[FeedingDemo] Widget ciblé: <${tag}>`, widgetEl);
+                            if (typeof widgetEl.updateData === 'function') {
+                                console.log(`[FeedingDemo] Appel updateData sur <${tag}> avec`, dataToFeed.slice(0,2));
+                                widgetEl.updateData(dataToFeed);
+                            } else if (typeof widgetEl.initializeWithEntity === 'function') {
+                                console.log(`[FeedingDemo] Appel initializeWithEntity sur <${tag}> avec`, dataToFeed.slice(0,2));
+                                widgetEl.initializeWithEntity({ configuration: { sampleData: dataToFeed } });
+                            } else {
+                                console.warn(`[FeedingDemo] Widget <${tag}> ne possède ni updateData ni initializeWithEntity.`);
+                            }
+                        });
+                    }
+        });
+        // Log global d'erreur JS
+        window.addEventListener('error', function(e) {
+            console.error('[FeedingDemo][GLOBAL ERROR]', e.message, e.error);
+        });
+        </script>
 </body>
 </html>
