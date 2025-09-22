@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Combo CSV Direct</title>
+</head>
+<body>
+    <h1>🔍 Debug: Pourquoi la combo est vide ?</h1>
+    <div id="results"></div>
+    
+    <!-- Test direct sans application complète -->
+    <script src="src/services/csv-data-source-simple.js"></script>
+    <script>
+        console.log('🔍 DEBUG: Starting direct investigation...');
+        
+        window.addEventListener('load', async function() {
+            const results = document.getElementById('results');
+            
+            // Test 1: Service CSV disponible ?
+            console.log('1️⃣ Vérification service CSV...');
+            results.innerHTML += '<h3>1️⃣ Service CSV</h3>';
+            
+            if (window.csvDataSourceService) {
+                console.log('✅ Service CSV trouvé');
+                results.innerHTML += '<p>✅ Service CSV disponible</p>';
+                
+                try {
+                    // Test 2: Découverte des sources
+                    console.log('2️⃣ Test découverte sources...');
+                    results.innerHTML += '<h3>2️⃣ Découverte Sources</h3>';
+                    
+                    const sources = await window.csvDataSourceService.discoverCSVSources();
+                    console.log('Sources découvertes:', sources.length, sources);
+                    
+                    if (sources.length > 0) {
+                        results.innerHTML += `<p>✅ ${sources.length} sources trouvées:</p><ul>`;
+                        sources.forEach(source => {
+                            results.innerHTML += `<li>${source.fileName} - ${source.name}</li>`;
+                        });
+                        results.innerHTML += '</ul>';
+                    } else {
+                        results.innerHTML += '<p>❌ Aucune source trouvée!</p>';
+                    }
+                    
+                    // Test 3: Feeding panel mock
+                    console.log('3️⃣ Test feeding panel mock...');
+                    results.innerHTML += '<h3>3️⃣ Test Feeding Panel Mock</h3>';
+                    
+                    // Créer une combo de test
+                    const testSelect = document.createElement('select');
+                    testSelect.style.width = '300px';
+                    testSelect.style.padding = '8px';
+                    
+                    // Fonction mock de renderDataSourceOptions
+                    function mockRenderDataSourceOptions() {
+                        if (sources.length === 0) {
+                            return `<option value="" disabled selected>No data sources found</option>`;
+                        }
+                        
+                        let options = '<option value="" selected>Select a data source...</option>';
+                        sources.forEach(source => {
+                            options += `<option value="${source.fileName}">${source.name} (${source.rowCount || 'Unknown'} rows)</option>`;
+                        });
+                        
+                        return options;
+                    }
+                    
+                    testSelect.innerHTML = mockRenderDataSourceOptions();
+                    
+                    results.appendChild(document.createElement('br'));
+                    results.appendChild(document.createTextNode('Test combo: '));
+                    results.appendChild(testSelect);
+                    
+                    if (testSelect.options.length > 1) {
+                        results.innerHTML += '<p>✅ Combo fonctionnelle avec options!</p>';
+                    } else {
+                        results.innerHTML += '<p>❌ Combo vide malgré les sources!</p>';
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Erreur:', error);
+                    results.innerHTML += `<p>❌ Erreur: ${error.message}</p>`;
+                }
+            } else {
+                console.log('❌ Service CSV NON trouvé');
+                results.innerHTML += '<p>❌ Service CSV non disponible</p>';
+            }
+        });
+    </script>
+</body>
+</html>

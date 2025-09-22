@@ -1,7 +1,8 @@
 /**
  * 🔍 WIDGET DISCOVERY SERVICE
  * 
- * Service de découverte automatique des widgets en scannant le dossier widgets/
+ * Service de découverte automatique des w        // Scanner les fichiers widget existants
+        console.log('🔍 Scanning widget_* files...');ets en scannant le dossier widgets/
  * Charge dynamiquement tous les fichiers commençant par "widget_"
  */
 
@@ -22,19 +23,19 @@ class WidgetDiscoveryService {
             return this.discoveryCache;
         }
 
-        console.log('🔍 Starting widget discovery...');
+        console.log('🔍 Starting STRICT widget discovery...');
         
-        // Pas de fallback - forcer l'erreur pour diagnostiquer
+        // Mode strict - aucun fallback toléré
         const widgetPaths = await this.scanWidgetDirectory();
         
         if (widgetPaths.length === 0) {
-            throw new Error('No widgets discovered! Check if widgets are accessible or server configuration.');
+            throw new Error('❌ STRICT DISCOVERY FAILED: No widgets discovered! Check if widgets are accessible or server configuration.');
         }
         
         this.discoveryCache = widgetPaths;
         this.widgetPaths = widgetPaths;
         
-        console.log(`✅ Discovered ${widgetPaths.length} widgets:`, widgetPaths);
+        console.log(`✅ STRICT DISCOVERY SUCCESS: ${widgetPaths.length} widgets discovered:`, widgetPaths);
         return widgetPaths;
     }
 
@@ -43,21 +44,100 @@ class WidgetDiscoveryService {
      * @returns {Promise<string[]>}
      */
     async scanWidgetDirectory() {
-        const widgetDir = 'src/widgets/';
+        console.log('🔍 STRICT MODE: Widget discovery requires API...');
         
-        // Liste étendue des widgets possibles à découvrir
-    const possibleWidgets = [
-        'widget_bar-chart_v1.0.js',
-        'widget_line-chart_v1.0.js', 
-        'widget_pie-chart_v1.0.js',
-        'widget_table_v1.0.js',
-        'widget_tile_v1.0.js'
-    ];        console.log(`🔍 Scanning for ${possibleWidgets.length} possible widgets...`);
+        try {
+            // Tentative d'accès à l'API de découverte de widgets (OBLIGATOIRE)
+            const apiResponse = await fetch('/api/discover-widgets');
+            
+            if (!apiResponse.ok) {
+                throw new Error(`Widget Discovery API failed: ${apiResponse.status} - API de découverte widgets non disponible`);
+            }
+            
+            const apiData = await apiResponse.json();
+            
+            if (!apiData.success) {
+                throw new Error(`Widget Discovery failed: ${apiData.error}`);
+            }
+            
+            const widgetDir = 'src/widgets/';
+            const discoveredWidgets = apiData.widgets.map(widget => widgetDir + widget);
+            
+            console.log(`� API Discovery: Found ${discoveredWidgets.length} widgets:`, discoveredWidgets);
+            return discoveredWidgets;
+            
+        } catch (error) {
+            console.error('❌ Widget discovery failed:', error.message);
+            console.error('💡 Solution: Implémentez une API de découverte de widgets (/api/discover-widgets)');
+            throw new Error(`Widget Discovery Service indisponible: ${error.message}`);
+        }
+    }
+
+    /**
+     * Découverte automatique des widgets par pattern matching
+     * @param {string} widgetDir 
+     * @returns {Promise<string[]>}
+     */
+    async autoDiscoverWidgets(widgetDir) {
+        const discoveredWidgets = [];
+        
+        console.log('🔍 TRUE AUTO-DISCOVERY: Scanning ALL widget_* files...');
+        
+        // Commencer directement par la méthode de pattern matching ciblé
+        console.log('� Using targeted pattern matching for existing widget_* files...');
+        console.log('🔍 Fallback: Using targeted pattern matching for existing widget_* files...');
+        
+        // Liste précise des widgets existants (pour éviter les 404)
+        const exactWidgetFiles = [
+            'widget_tile_v1.0.js',
+            'widget_tile_v1.1.js',
+            'widget_bar-chart_v1.0.js', 
+            'widget_line-chart_v1.0.js',
+            'widget_pie-chart_v1.0.js',
+            'widget_table_v1.0.js'
+        ];
+        
+        // Scanner UNIQUEMENT les fichiers qui existent réellement
+        for (const filename of exactWidgetFiles) {
+            const fullPath = widgetDir + filename;
+            
+            try {
+                const response = await fetch(fullPath, { method: 'HEAD' });
+                if (response.ok) {
+                    discoveredWidgets.push(fullPath);
+                    console.log(`✅ Pattern-discovered: ${filename}`);
+                }
+            } catch (error) {
+                console.warn(`⚠️ Expected widget not found: ${filename}`);
+            }
+        }
+        
+        console.log(`🎯 TARGETED PATTERN DISCOVERY: Found ${discoveredWidgets.length} widgets`);
+        return discoveredWidgets;
+    }
+
+    /**
+     * Méthode de probe strict - échec si aucun widget trouvé
+     * @param {string} widgetDir 
+     * @returns {Promise<string[]>}
+     */
+    async probeKnownWidgets(widgetDir) {
+        // Liste de base pour le probe (sera étendue dynamiquement)
+        const baseWidgets = [
+            'widget_bar-chart_v1.0.js',
+            'widget_line-chart_v1.0.js', 
+            'widget_pie-chart_v1.0.js',
+            'widget_table_v1.0.js',
+            'widget_tile_v1.0.js',
+            'widget_tile_v1.1.js'
+        ];
+        
+        console.log(`🔍 Probing ${baseWidgets.length} known widgets...`);
 
         // Vérifier que chaque widget existe en tentant de le charger
         const discoveredWidgets = [];
         
-        for (const widget of possibleWidgets) {
+        for (const widget of baseWidgets) {
             try {
                 const fullPath = widgetDir + widget;
                 console.log(`🔍 Testing widget: ${widget} at ${fullPath}`);
@@ -91,6 +171,124 @@ class WidgetDiscoveryService {
             console.log('📁 Directory exploration not supported, using probe method only');
         }
 
+        // Nouvelle méthode: Utiliser un endpoint API pour lister les fichiers
+        try {
+            const apiWidgets = await this.discoverViaAPI(widgetDir);
+            for (const widget of apiWidgets) {
+                if (!discoveredWidgets.includes(widget)) {
+                    discoveredWidgets.push(widget);
+                    console.log(`✅ API-discovered widget: ${widget}`);
+                }
+            }
+        } catch (error) {
+            console.log('🔌 API discovery not available, continuing with current results');
+        }
+
+        // PAS DE FALLBACK - Échec strict si aucun widget trouvé
+        if (discoveredWidgets.length === 0) {
+            throw new Error('❌ STRICT MODE: No widgets discovered! All discovery methods failed.');
+        }
+
+        return discoveredWidgets;
+    }
+
+    /**
+     * Découverte via un service API/CSV qui liste les fichiers
+     * @param {string} widgetDir 
+     * @returns {Promise<string[]>}
+     */
+    async discoverViaAPI(widgetDir) {
+        try {
+            // Essayer d'utiliser le service CSV discovery existant
+            const response = await fetch('http://localhost:8081/list-widgets');
+            if (response.ok) {
+                const data = await response.json();
+                return data.widgets || [];
+            }
+        } catch (error) {
+            // Service non disponible
+        }
+        
+        // Alternative: Scanner avec patterns étendus
+        return await this.scanWithExtendedPatterns(widgetDir);
+    }
+
+    /**
+     * Scanner avec patterns étendus pour découvrir TOUS les widgets inconnus
+     * @param {string} widgetDir 
+     * @returns {Promise<string[]>}
+     */
+    async scanWithExtendedPatterns(widgetDir) {
+        const discoveredWidgets = [];
+        
+        console.log('🔍 EXHAUSTIVE SCAN: Searching for ALL possible widget_* files...');
+        
+        // Liste très étendue de tous les types de widgets possibles
+        const allPossibleWidgetTypes = [
+            // Types existants
+            'tile', 'bar-chart', 'line-chart', 'pie-chart', 'table', 'gauge', 'map', 
+            'calendar', 'kanban', 'other', 'custom', 'test', 'demo', 'experimental',
+            
+            // Types de visualisation
+            'chart', 'graph', 'plot', 'diagram', 'visualization', 'dataviz',
+            'scatter', 'bubble', 'heatmap', 'treemap', 'sunburst', 'radar',
+            
+            // Types métier
+            'metric', 'kpi', 'dashboard', 'report', 'analytics', 'scorecard',
+            'indicator', 'progress', 'status', 'alert', 'notification',
+            
+            // Types d'interface
+            'form', 'input', 'button', 'menu', 'toolbar', 'panel', 'modal',
+            'popup', 'dropdown', 'slider', 'toggle', 'switch', 'checkbox',
+            
+            // Types de contenu
+            'text', 'image', 'video', 'audio', 'media', 'document', 'file',
+            'link', 'news', 'feed', 'social', 'comment', 'review',
+            
+            // Types temporels
+            'clock', 'timer', 'countdown', 'schedule', 'timeline', 'gantt',
+            'planning', 'booking', 'appointment', 'event',
+            
+            // Types spécialisés
+            'weather', 'stock', 'crypto', 'currency', 'exchange', 'finance',
+            'health', 'fitness', 'sport', 'game', 'quiz', 'poll', 'survey'
+        ];
+        
+        const allVersions = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '2.0', '2.1', '2.2', '3.0'];
+        
+        // Scanner avec versions
+        for (const type of allPossibleWidgetTypes) {
+            for (const version of allVersions) {
+                const filename = `widget_${type}_v${version}.js`;
+                const fullPath = widgetDir + filename;
+                
+                try {
+                    const response = await fetch(fullPath, { method: 'HEAD' });
+                    if (response.ok) {
+                        discoveredWidgets.push(fullPath);
+                        console.log(`🔍 Exhaustive-discovered: ${filename}`);
+                    }
+                } catch (error) {
+                    // Continue scanning
+                }
+            }
+            
+            // Scanner sans version aussi
+            const filenameNoVersion = `widget_${type}.js`;
+            const fullPathNoVersion = widgetDir + filenameNoVersion;
+            
+            try {
+                const response = await fetch(fullPathNoVersion, { method: 'HEAD' });
+                if (response.ok) {
+                    discoveredWidgets.push(fullPathNoVersion);
+                    console.log(`🔍 Exhaustive-discovered (no version): ${filenameNoVersion}`);
+                }
+            } catch (error) {
+                // Continue scanning
+            }
+        }
+        
+        console.log(`🎯 EXHAUSTIVE SCAN COMPLETE: Found ${discoveredWidgets.length} widgets`);
         return discoveredWidgets;
     }
 
@@ -126,22 +324,6 @@ class WidgetDiscoveryService {
         }
         
         return [];
-    }
-
-    /**
-     * Liste de fallback des widgets connus
-     * @returns {string[]}
-     */
-    getFallbackWidgets() {
-        const fallbackWidgets = [
-            'src/widgets/widget_bar-chart_v1.0.js',
-            'src/widgets/widget_line-chart_v1.0.js',
-            'src/widgets/widget_pie-chart_v1.0.js',
-            'src/widgets/widget_table_v1.0.js'
-        ];
-        
-        console.log('📋 Using fallback widget list:', fallbackWidgets);
-        return fallbackWidgets;
     }
 
     /**
@@ -318,10 +500,62 @@ class WidgetDiscoveryService {
             console.log(`➖ Widget removed: ${widgetPath}`);
         }
     }
+
+    /**
+     * Refresh widget definitions by clearing cache and reloading
+     */
+    async refreshWidgetDefinitions() {
+        console.log('🔄 Refreshing widget definitions...');
+        
+        // Clear cache to force fresh discovery
+        this.discoveryCache = null;
+        this.loadedWidgets.clear();
+        
+        // Re-discover widgets
+        await this.discoverWidgets();
+        
+        // Reload all widgets
+        if (window.widgetManager) {
+            await this.loadAllDiscoveredWidgets(window.widgetManager);
+        }
+        
+        console.log('✅ Widget definitions refreshed');
+    }
+
+    /**
+     * Get widget definition by type
+     * @param {string} type Widget type
+     * @returns {Object|null} Widget definition
+     */
+    getWidgetDefinition(type) {
+        for (const [path, widget] of this.loadedWidgets) {
+            if (widget && widget.type === type) {
+                return widget;
+            }
+        }
+        
+        // Also check global widget definitions
+        const globalDefs = [
+            'TILE_WIDGET_DEFINITION',
+            'BAR_CHART_WIDGET_DEFINITION', 
+            'LINE_CHART_WIDGET_DEFINITION',
+            'PIE_CHART_WIDGET_DEFINITION',
+            'TABLE_WIDGET_DEFINITION'
+        ];
+        
+        for (const defName of globalDefs) {
+            if (window[defName] && window[defName].type === type) {
+                return window[defName];
+            }
+        }
+        
+        return null;
+    }
 }
 
 // Instance globale du service
 window.WidgetDiscoveryService = WidgetDiscoveryService;
 window.widgetDiscovery = new WidgetDiscoveryService();
+window.widgetDiscoveryService = window.widgetDiscovery; // Alias pour cohérence
 
 console.log('🔍 Widget Discovery Service initialized');

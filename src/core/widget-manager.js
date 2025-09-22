@@ -12,8 +12,6 @@ class WidgetManager {
         this.listeners = new Map(); // Event listeners
         this.entityRenderer = null; // Will be injected
         this.widgetDefinitions = new Map(); // Widget definitions storage
-        
-        console.log('🏗️ WidgetManager: Initialized');
     }
     
     /**
@@ -29,7 +27,7 @@ class WidgetManager {
      */
     setRepository(repository) {
         this.repository = repository;
-        console.log('💾 WidgetManager: Repository attached:', repository.constructor.name);
+        window.logIf('WIDGET_MANAGER_INIT', '💾 WidgetManager: Repository attached:', repository.constructor.name);
     }
     
     // === UNIFIED WIDGET LOADING ===
@@ -40,8 +38,6 @@ class WidgetManager {
      * @returns {Promise<Object>} Widget definition and class
      */
     async loadUnifiedWidget(widgetPath) {
-        console.log('📦 WidgetManager: Loading unified widget:', widgetPath);
-        
         try {
             // Load the widget file
             const script = document.createElement('script');
@@ -67,7 +63,9 @@ class WidgetManager {
                 registeredWidgets.push(definition);
             }
             
-            console.log('✅ WidgetManager: Unified widgets loaded:', registeredWidgets.map(w => w.type));
+            const definitions = this.extractWidgetDefinitions();
+            
+            return definitions;
             return registeredWidgets;
             
         } catch (error) {
@@ -96,7 +94,7 @@ class WidgetManager {
      * Register a widget definition for use in the system
      */
     async registerWidgetDefinition(definition) {
-        console.log('📋 WidgetManager: Registering widget definition:', definition.type);
+        window.logIf && window.logIf('WIDGET_REGISTRATION', '📋 WidgetManager: Registering widget definition:', definition.type);
         
         try {
             // Validate definition structure
@@ -107,7 +105,7 @@ class WidgetManager {
             // Store definition for widget creation
             this.widgetDefinitions.set(definition.type, definition);
             
-            console.log('✅ WidgetManager: Widget definition registered:', definition.type);
+            window.logIf && window.logIf('WIDGET_REGISTRATION', '✅ WidgetManager: Widget definition registered:', definition.type);
             this.emit('widgetDefinitionRegistered', definition);
             
         } catch (error) {
@@ -127,6 +125,7 @@ class WidgetManager {
         }
         
         const definition = this.widgetDefinitions.get(type);
+        console.log('📊 WidgetManager: Found definition with demoDataset:', !!definition.demoDataset);
         
         // Create entity config using definition as template
         const entityConfig = {
@@ -152,6 +151,35 @@ class WidgetManager {
         
         // Create entity directly without calling createWidget (avoid recursion)
         const entity = new WidgetEntity(entityConfig);
+        
+        // 🎯 AUTO-PUSH DEMO DATASET si disponible
+        if (definition.demoDataset && definition.demoDataset.data) {
+            console.log('🚀 WidgetManager: Auto-pushing demo dataset to widget:', definition.demoDataset.metadata.name);
+            
+            // Initialiser widgetData si pas déjà fait
+            if (!entity.widgetData) {
+                entity.widgetData = {
+                    rawData: null,
+                    formattedData: null,
+                    lastUpdated: null,
+                    isLoaded: false
+                };
+            }
+            
+            // Pousser les données de démo
+            entity.widgetData.rawData = definition.demoDataset.data;
+            entity.widgetData.formattedData = definition.demoDataset.data;
+            entity.widgetData.lastUpdated = new Date().toISOString();
+            entity.widgetData.isLoaded = true;
+            entity.widgetData.source = 'demo-dataset';
+            entity.widgetData.metadata = definition.demoDataset.metadata;
+            
+            console.log('✅ WidgetManager: Demo dataset auto-pushed:', {
+                source: entity.widgetData.source,
+                rowCount: entity.widgetData.rawData.length,
+                lastUpdated: entity.widgetData.lastUpdated
+            });
+        }
         
         // Validate entity
         const validation = entity.validate();
@@ -202,6 +230,31 @@ class WidgetManager {
      */
     getWidgetDefinition(type) {
         return this.widgetDefinitions?.get(type) || null;
+    }
+    
+    /**
+     * Get all available widget definitions
+     */
+    getAvailableWidgetDefinitions() {
+        if (!this.widgetDefinitions) return [];
+        
+        return Array.from(this.widgetDefinitions.values());
+    }
+    
+    /**
+     * Diagnostic method to check current state
+     */
+    getState() {
+        const state = {
+            totalDefinitions: this.widgetDefinitions ? this.widgetDefinitions.size : 0,
+            totalEntities: this.entities ? this.entities.size : 0,
+            definitionTypes: this.widgetDefinitions ? Array.from(this.widgetDefinitions.keys()) : [],
+            entityIds: this.entities ? Array.from(this.entities.keys()) : [],
+            windowDefinitions: Object.keys(window).filter(k => k.endsWith('_WIDGET_DEFINITION'))
+        };
+        
+        window.logIf && window.logIf('WIDGET_MANAGER_INIT', '🔍 WidgetManager State:', state);
+        return state;
     }
     
     // === CRUD OPERATIONS ===
@@ -292,6 +345,33 @@ class WidgetManager {
                 Object.assign(entity.metadata, updates.metadata);
             }
             
+            // Handle widget data updates (new!)
+            if (updates.data || updates.widgetData) {
+                // Ensure entity.widgetData exists
+                if (!entity.widgetData) {
+                    entity.widgetData = {
+                        rawData: [],
+                        formattedData: [],
+                        lastUpdated: null,
+                        isLoaded: false
+                    };
+                }
+                
+                const dataUpdate = updates.widgetData || {
+                    rawData: updates.data || [],
+                    formattedData: updates.formattedData || [],
+                    lastUpdated: new Date().toISOString(),
+                    isLoaded: true
+                };
+                
+                Object.assign(entity.widgetData, dataUpdate);
+                console.log('📊 WidgetManager: Widget data updated', {
+                    rawDataCount: entity.widgetData.rawData.length,
+                    formattedDataCount: entity.widgetData.formattedData.length,
+                    lastUpdated: entity.widgetData.lastUpdated
+                });
+            }
+            
             // Update basic properties
             if (updates.name) entity.name = updates.name;
             if (updates.title) entity.title = updates.title;
@@ -356,7 +436,6 @@ class WidgetManager {
      */
     getAllWidgets() {
         const widgets = Array.from(this.entities.values());
-        console.log('📋 WidgetManager: Retrieved all widgets, count:', widgets.length);
         return widgets;
     }
     

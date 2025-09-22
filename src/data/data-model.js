@@ -300,22 +300,23 @@ class DataModel {
         console.log('🔍 DataModel: Extracted dimensions:', dimensions);
         console.log('🔍 DataModel: Extracted measures:', measures);
         
-        // Prepare measure configurations with aggregation
+        // Prepare measure configurations with aggregation - use fieldName (converted) over fieldId
         const measureConfigs = measures.map(measure => {
             console.log('🔍 Processing measure:', measure);
             const config = {
-                field: typeof measure === 'string' ? measure : (measure.field || measure.fieldId || measure.name),
+                field: typeof measure === 'string' ? measure : (measure.fieldName || measure.field || measure.fieldId || measure.name),
                 aggregation: typeof measure === 'object' ? measure.aggregation : 'SUM'
             };
-            console.log('🔍 Measure config:', config);
+            console.log('🔍 Measure config:', config, 'from:', measure);
             return config;
         });
         
-        // Also prepare dimension field names properly
+        // Also prepare dimension field names properly - use fieldName (converted) over fieldId
         const dimensionFields = dimensions.map(dim => {
             console.log('🔍 Processing dimension:', dim);
-            const field = typeof dim === 'string' ? dim : (dim.field || dim.fieldId || dim.name);
-            console.log('🔍 Dimension field:', field);
+            // Priority: fieldName (converted) > field > fieldId > name
+            const field = typeof dim === 'string' ? dim : (dim.fieldName || dim.field || dim.fieldId || dim.name);
+            console.log('🔍 Dimension field:', field, 'from:', dim);
             return field;
         });
         

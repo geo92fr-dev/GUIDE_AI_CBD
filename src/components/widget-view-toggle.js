@@ -11,7 +11,7 @@ class WidgetViewToggle extends HTMLElement {
         this.attachShadow({ mode: 'open' });
         
         // State
-        this._isViewMode = false; // false = Info mode, true = View mode
+        this._isViewMode = true; // false = Info mode, true = View mode (DEFAULT: VIEW)
         this._widgetId = null;
         this._disabled = false;
         
@@ -21,6 +21,20 @@ class WidgetViewToggle extends HTMLElement {
 
     static get observedAttributes() {
         return ['widget-id', 'view-mode', 'disabled'];
+    }
+
+    connectedCallback() {
+        // S'assurer que les attributs sont traités après l'ajout au DOM
+        if (this.hasAttribute('view-mode')) {
+            this._isViewMode = this.getAttribute('view-mode') === 'true';
+        }
+        if (this.hasAttribute('widget-id')) {
+            this._widgetId = this.getAttribute('widget-id');
+        }
+        if (this.hasAttribute('disabled')) {
+            this._disabled = this.hasAttribute('disabled');
+        }
+        this.render();
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -45,6 +59,7 @@ class WidgetViewToggle extends HTMLElement {
     set isViewMode(value) {
         this._isViewMode = Boolean(value);
         this.setAttribute('view-mode', this._isViewMode.toString());
+        this.render();
         this.dispatchToggleEvent();
     }
 
@@ -216,6 +231,7 @@ class WidgetViewToggle extends HTMLElement {
         
         setTimeout(() => {
             button.classList.remove('toggling');
+            // Utiliser le setter pour déclencher render() et dispatchToggleEvent()
             this.isViewMode = !this._isViewMode;
         }, 100);
     }

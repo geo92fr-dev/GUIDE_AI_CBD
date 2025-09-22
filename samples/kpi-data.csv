@@ -1,0 +1,28 @@
+label,value,unit,trend,previous_value,change_percent,category,icon
+Revenue,2450000,€,up,2150000,13.95,Financial,💰
+Profit,485000,€,up,420000,15.48,Financial,📈
+Gross Margin,58.2,%,up,55.7,4.49,Financial,📊
+EBITDA,312000,€,up,285000,9.47,Financial,💼
+Customers,1250,count,up,1180,5.93,Customer,👥
+New Customers,342,count,up,298,14.77,Customer,🆕
+Orders,3420,count,up,3150,8.57,Sales,📦
+Conversion Rate,4.2,%,down,4.8,-12.50,Marketing,🎯
+Traffic,28500,visits,up,26100,9.20,Marketing,🌐
+Sales Volume,156780,units,up,142300,10.18,Sales,📈
+ROI,285,%,up,245,16.33,Financial,💹
+Cart Value,142.50,€,up,138.20,3.11,Sales,🛒
+Bounce Rate,32.1,%,down,35.2,-8.81,Marketing,🚫
+Active Users,8940,count,up,8450,5.80,Customer,👤
+Revenue Per User,274.12,€,up,254.73,7.61,Financial,💳
+Churn Rate,3.2,%,down,4.1,-21.95,Customer,🔄
+Customer Lifetime Value,1850,€,up,1720,7.56,Financial,💎
+Cost Per Acquisition,35.60,€,down,42.30,-15.84,Marketing,💸
+Monthly Recurring Revenue,185000,€,up,172000,7.56,Financial,🔄
+Net Promoter Score,72,score,up,68,5.88,Customer,🌟
+Support Tickets,245,count,down,298,-17.79,Support,🎧
+Page Views,185600,views,up,168200,10.34,Marketing,📄
+Satisfaction Score,4.3,rating,up,4.1,4.88,Customer,⭐
+Inventory Turnover,8.2,times,up,7.5,9.33,Operations,📦
+Delivery Time,2.4,days,down,3.1,-22.58,Operations,🚚
+Employee Productivity,142,units/hour,up,135,5.19,HR,👔
+Training Hours,45,hours,up,38,18.42,HR,🎓

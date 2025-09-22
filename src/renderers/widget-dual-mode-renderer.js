@@ -18,10 +18,12 @@ class WidgetDualModeRenderer {
     getWidgetManager() {
         if (!this.widgetManager) {
             console.log('🔍 DualModeRenderer: Checking WidgetManager availability...');
-            console.log('🔍 window.WidgetManager:', typeof window.WidgetManager);
-            console.log('🔍 WidgetManager global:', typeof WidgetManager);
             
-            if (typeof window.WidgetManager !== 'undefined') {
+            // Prioritize global instance if it exists
+            if (window.widgetManager) {
+                console.log('🏭 DualModeRenderer: Using existing global WidgetManager instance');
+                this.widgetManager = window.widgetManager;
+            } else if (typeof window.WidgetManager !== 'undefined') {
                 console.log('🏭 DualModeRenderer: Initializing WidgetManager from window');
                 this.widgetManager = new window.WidgetManager();
             } else if (typeof WidgetManager !== 'undefined') {
@@ -34,7 +36,7 @@ class WidgetDualModeRenderer {
         }
         
         if (this.widgetManager) {
-            console.log('🔍 DualModeRenderer: widgetDefinitions:', this.widgetManager.widgetDefinitions);
+            console.log('🔍 DualModeRenderer: widgetDefinitions count:', this.widgetManager.widgetDefinitions?.size || 0);
         }
         
         return this.widgetManager;
@@ -45,14 +47,49 @@ class WidgetDualModeRenderer {
      */
     setViewMode(widgetId, isViewMode) {
         this.viewModeStates.set(widgetId, isViewMode);
-        console.log('🔄 DualModeRenderer: Widget', widgetId, '→', isViewMode ? 'VIEW' : 'INFO');
+        console.log('🔄 DualModeRenderer: Widget', widgetId, '→', isViewMode ? 'VIEW' : 'INFO', '(stored)');
+    }
+
+    /**
+     * Convert field ID to actual CSV column name (same logic as feeding panel)
+     * @param {string} fieldId - Field ID like "kpi-data.csv_label_0"
+     * @returns {string} - Actual column name like "label"
+     */
+    convertFieldIdToColumnName(fieldId) {
+        if (!fieldId || typeof fieldId !== 'string') return fieldId;
+        
+        // Check if it's a CSV-generated field ID (format: filename_columnname_index)
+        const csvFieldPattern = /^(.+)\.csv_(.+)_(\d+)$/;
+        const match = fieldId.match(csvFieldPattern);
+        
+        if (match) {
+            const [, fileName, columnName, index] = match;
+            console.log('🔧 DualModeRenderer: Converting field ID:', fieldId, '→', columnName);
+            return columnName;
+        }
+        
+        // If not a CSV field ID, return as-is
+        return fieldId;
+    }
+
+    /**
+     * Get the field name from dimension/measure config, using fieldName first, then converting fieldId
+     */
+    getFieldName(config) {
+        // Priority: fieldName (already converted) > convert fieldId > fallback to other properties
+        if (config.fieldName) {
+            return config.fieldName;
+        }
+        
+        const rawFieldId = config.name || config.fieldId || config.field || config.id;
+        return this.convertFieldIdToColumnName(rawFieldId);
     }
 
     /**
      * Get view mode for a widget
      */
     getViewMode(widgetId) {
-        return this.viewModeStates.get(widgetId) || false; // Default to Info mode
+        return this.viewModeStates.get(widgetId) !== undefined ? this.viewModeStates.get(widgetId) : true; // Default to VIEW mode
     }
 
     /**
@@ -65,7 +102,7 @@ class WidgetDualModeRenderer {
     }
 
     /**
-     * Render widget based on current mode
+     * Render widget based on current mode with integrated toggle
      */
     async renderWidget(entity, container) {
         if (!entity || !container) {
@@ -73,7 +110,56 @@ class WidgetDualModeRenderer {
             return;
         }
 
+        // Créer un wrapper sans header - juste le contenu pur
+        const wrapper = document.createElement('div');
+        wrapper.className = 'widget-wrapper';
+        wrapper.innerHTML = `
+            <style>
+                .widget-wrapper {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .widget-content-area {
+                    flex: 1;
+                    overflow: hidden;
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                }
+            </style>
+            <div class="widget-content-area" id="widget-content-${entity.id}">
+                <!-- Le contenu du widget sera rendu ici -->
+            </div>
+        `;
+
+        // Remplacer le contenu du container
+        container.innerHTML = '';
+        container.appendChild(wrapper);
+
+        // Obtenir la zone de contenu pour le rendu
+        const contentArea = wrapper.querySelector(`#widget-content-${entity.id}`);
+        
+        // Initialiser explicitement le mode VIEW pour ce widget
+        this.setViewMode(entity.id, true);
+
+        // Rendre le contenu initial
+        await this.renderWidgetContent(entity, contentArea);
+    }
+
+    /**
+     * Render widget content based on current mode
+     */
+    async renderWidgetContent(entity, container) {
+        if (!entity || !container) {
+            console.error('❌ DualModeRenderer: Missing entity or container for content');
+            return;
+        }
+
         const isViewMode = this.getViewMode(entity.id);
+        console.log('🎨 DualModeRenderer: Rendering content for', entity.id, '→', isViewMode ? 'VIEW' : 'INFO', 'mode');
         
         if (isViewMode) {
             await this.renderViewMode(entity, container);
@@ -145,11 +231,33 @@ class WidgetDualModeRenderer {
             // Charger le widget unifié si pas déjà chargé
             const widgetType = entity.type;
             console.log('🔍 DualModeRenderer: Looking for widget type:', widgetType);
+            console.log('🔍 DualModeRenderer: Available widget types:', Array.from(widgetManager.widgetDefinitions.keys()));
             
             if (!widgetManager.widgetDefinitions.has(widgetType)) {
                 console.log('📦 DualModeRenderer: Loading unified widget for', widgetType);
-                // Essayer de charger le widget unifié avec le nouveau pattern de nommage
-                const unifiedPath = `src/widgets/widget_${widgetType}_v1.0.js`;
+                
+                // Mapping spécial pour les widgets avec des types complexes
+                const getWidgetPath = (type) => {
+                    const specialMappings = {
+                        'tile-v1.2': 'src/widgets/widget_tile_v1.2.js',
+                        'tile-v1.1': 'src/widgets/widget_tile_v1.1.js',
+                        'tile': 'src/widgets/widget_tile_v1.0.js',
+                        'bar-chart': 'src/widgets/widget_bar-chart_v1.0.js',
+                        'line-chart': 'src/widgets/widget_line-chart_v1.0.js',
+                        'pie-chart': 'src/widgets/widget_pie-chart_v1.0.js',
+                        'table': 'src/widgets/widget_table_v1.0.js'
+                    };
+                    
+                    if (specialMappings[type]) {
+                        return specialMappings[type];
+                    }
+                    
+                    // Fallback au pattern standard
+                    return `src/widgets/widget_${type}_v1.0.js`;
+                };
+                
+                const unifiedPath = getWidgetPath(widgetType);
+                console.log('🔍 DualModeRenderer: Trying to load widget from:', unifiedPath);
                 await widgetManager.loadUnifiedWidget(unifiedPath);
             } else {
                 console.log('✅ DualModeRenderer: Widget definition already loaded for', widgetType);
@@ -162,29 +270,87 @@ class WidgetDualModeRenderer {
                 const definition = widgetManager.widgetDefinitions.get(widgetType);
                 console.log('📋 Widget definition:', definition);
                 
-                const widgetElement = new definition.class();
-                console.log('🔧 Widget element created:', widgetElement);
-                
-                // Initialiser avec l'entité
-                widgetElement.initializeWithEntity(entity);
-                console.log('⚙️ Widget initialized with entity');
-                
-                // Convertir les données de l'entité vers le format du widget
-                console.log('📊 DualModeRenderer: Converting entity data...');
-                const widgetData = this.convertEntityDataToWidgetFormat(entity);
-                console.log('📊 Widget data generated:', widgetData);
-                
-                widgetElement.updateData(widgetData);
-                console.log('✅ Widget data updated');
-                
-                // Ajouter au container
-                container.innerHTML = '';
-                container.appendChild(widgetElement);
-                console.log('🎨 Widget added to container');
-                
-                return true;
+                // Vérifier si le widget a une fonction render (nouvelle signature)
+                if (definition.render && typeof definition.render === 'function') {
+                    console.log('🆕 DualModeRenderer: Using new render function signature');
+                    
+                    // Convertir les données de l'entité vers le format attendu par la fonction render
+                    let widgetData = this.convertEntityDataToWidgetFormat(entity);
+                    
+                    // 🚀 AUTO-PUSH: Prioriser les données auto-poussées si disponibles
+                    if (entity.widgetData && entity.widgetData.isLoaded && entity.widgetData.rawData) {
+                        console.log('🚀 DualModeRenderer: Using auto-pushed data for render function');
+                        console.log('📊 Auto-push data:', {
+                            source: entity.widgetData.source,
+                            rowCount: entity.widgetData.rawData.length,
+                            lastUpdated: entity.widgetData.lastUpdated
+                        });
+                        widgetData = entity.widgetData.rawData;
+                    }
+                    
+                    console.log('📊 Widget data generated for render function:', widgetData);
+                    
+                    // Appeler la fonction render avec les arguments attendus
+                    const renderArgs = { json: widgetData };
+                    const renderedElement = definition.render(renderArgs);
+                    console.log('✅ Widget rendered with new signature');
+                    
+                    // Ajouter au container
+                    container.innerHTML = '';
+                    container.appendChild(renderedElement);
+                    console.log('🎨 Widget added to container');
+                    
+                    return true;
+                } else if (definition.class) {
+                    console.log('🔄 DualModeRenderer: Using legacy class-based approach');
+                    
+                    const widgetElement = new definition.class();
+                    console.log('🔧 Widget element created:', widgetElement);
+                    
+                    // Initialiser avec l'entité
+                    widgetElement.initializeWithEntity(entity);
+                    console.log('⚙️ Widget initialized with entity');
+                    
+                    // Convertir les données de l'entité vers le format du widget
+                    console.log('📊 DualModeRenderer: Converting entity data...');
+                    const widgetData = this.convertEntityDataToWidgetFormat(entity);
+                    console.log('📊 Widget data generated:', widgetData);
+                    
+                    // 🚀 AUTO-PUSH: Si l'entité a des données auto-poussées, les transférer au widget
+                    if (entity.widgetData && entity.widgetData.isLoaded && widgetElement.setFeedingData) {
+                        console.log('🚀 DualModeRenderer: Auto-pushing entity widgetData to custom element');
+                        console.log('📊 Auto-push data:', {
+                            source: entity.widgetData.source,
+                            rowCount: entity.widgetData.rawData ? entity.widgetData.rawData.length : 0,
+                            lastUpdated: entity.widgetData.lastUpdated
+                        });
+                        
+                        // Utiliser les données auto-poussées plutôt que les converties
+                        widgetElement.setFeedingData(entity.widgetData.rawData);
+                        console.log('✅ Auto-push completed to custom element');
+                    } else {
+                        // Fallback vers la méthode classique
+                        widgetElement.updateData(widgetData);
+                        console.log('✅ Widget data updated (classic method)');
+                    }
+                    
+                    // Ajouter au container
+                    container.innerHTML = '';
+                    container.appendChild(widgetElement);
+                    console.log('🎨 Widget added to container');
+                    
+                    return true;
+                } else {
+                    console.error('❌ DualModeRenderer: Widget definition has neither render function nor class:', definition);
+                    return false;
+                }
             } else {
                 console.warn('⚠️ DualModeRenderer: Widget definition not found after loading for', widgetType);
+                const availableTypes = Array.from(widgetManager.widgetDefinitions.keys());
+                console.warn('🔍 DualModeRenderer: Available types after loading:', availableTypes);
+                console.warn('🔍 DualModeRenderer: Total available types:', availableTypes.length);
+                console.warn('🔍 DualModeRenderer: Looking for type:', widgetType);
+                console.warn('🔍 DualModeRenderer: Type exists in list:', availableTypes.includes(widgetType));
                 return false;
             }
         } catch (error) {
@@ -487,13 +653,28 @@ class WidgetDualModeRenderer {
         // Récupérer les données réelles
         let dataPreviewHtml = '';
         try {
-            if (typeof window !== 'undefined' && window.dataModel && entity.dataBinding) {
-                const realData = window.dataModel.getDataForBinding(entity.dataBinding);
+            // Priorité 1: Utiliser les données préparées dans l'entité (nouveau système)
+            let realData = null;
+            
+            if (entity.widgetData && entity.widgetData.isLoaded && entity.widgetData.rawData) {
+                console.log('✅ Using entity widgetData (preferred)');
+                realData = entity.widgetData.rawData;
+                console.log('📊 Entity rawData:', realData);
+            } 
+            // Priorité 2: Fallback vers le DataModel (ancien système)
+            else if (typeof window !== 'undefined' && window.dataModel && entity.dataBinding) {
+                console.log('� Fallback to DataModel for preview');
+                realData = window.dataModel.getDataForBinding(entity.dataBinding);
+                console.log('📊 DataModel data:', realData);
+            }
+            
+            if (realData && realData.length > 0) {
                 console.log('📊 Data preview - Real data type:', typeof realData);
-                console.log('📊 Data preview - Real data:', realData);
+                console.log('📊 Data preview - Real data:', JSON.stringify(realData));
                 console.log('📊 Data preview - Is Array:', Array.isArray(realData));
+                console.log('📊 Data preview - Length:', realData.length);
                 
-                if (realData && realData.length > 0) {
+                if (realData[0]) {
                     console.log('📊 Data preview - First item type:', typeof realData[0]);
                     console.log('📊 Data preview - First item:', realData[0]);
                     
@@ -525,7 +706,7 @@ class WidgetDualModeRenderer {
                     // En-têtes des colonnes - essayer différentes propriétés pour les noms de champs
                     const dimensionFields = [];
                     dimensions.forEach(dim => {
-                        const fieldName = dim.name || dim.fieldId || dim.field || dim.id;
+                        const fieldName = this.getFieldName(dim);
                         dimensionFields.push(fieldName);
                         tableHtml += `<th>${fieldName} (dim)</th>`;
                         console.log('🔍 Dimension field name:', fieldName, 'from config:', dim);
@@ -533,7 +714,7 @@ class WidgetDualModeRenderer {
                     
                     const measureFields = [];
                     measures.forEach(measure => {
-                        const fieldName = measure.name || measure.fieldId || measure.field || measure.id;
+                        const fieldName = this.getFieldName(measure);
                         measureFields.push(fieldName);
                         tableHtml += `<th>${fieldName} (measure)</th>`;
                         console.log('🔍 Measure field name:', fieldName, 'from config:', measure);
@@ -575,6 +756,16 @@ class WidgetDualModeRenderer {
                         availableKeysDisplay = firstRowKeys;
                     }
                     
+                    // Information sur les données formatées si disponibles
+                    let formattedDataInfo = '';
+                    if (entity.widgetData && entity.widgetData.formattedData && entity.widgetData.formattedData.length > 0) {
+                        formattedDataInfo = `
+                            <div style="margin-bottom: 8px; font-size: 0.7em; color: var(--success-color);">
+                                ✅ Formatted data ready: ${entity.widgetData.formattedData.length} items (${JSON.stringify(entity.widgetData.formattedData.slice(0, 3))})
+                            </div>
+                        `;
+                    }
+                    
                     dataPreviewHtml = `
                         <div class="data-preview-content">
                             <div style="margin-bottom: 8px; color: var(--text-secondary);">
@@ -586,6 +777,7 @@ class WidgetDualModeRenderer {
                             <div style="margin-bottom: 8px; font-size: 0.7em; color: var(--info-color);">
                                 📊 First row sample: ${typeof firstRowSample === 'object' ? JSON.stringify(firstRowSample) : firstRowSample}
                             </div>
+                            ${formattedDataInfo}
                             ${tableHtml}
                         </div>
                         
@@ -625,7 +817,7 @@ class WidgetDualModeRenderer {
             } else {
                 dataPreviewHtml = `
                     <div style="color: var(--text-secondary); font-size: 0.8em;">
-                        DataModel not available or no dataBinding
+                        No data available. Please assign data using the Feeding Panel.
                     </div>
                 `;
             }
@@ -668,9 +860,36 @@ class WidgetDualModeRenderer {
      * Utility methods
      */
     hasValidData(entity) {
-        if (!entity.dataBinding) return false;
-        return entity.dataBinding.dimensions.length > 0 || 
-               entity.dataBinding.measures.length > 0;
+        console.log('🔍 DualModeRenderer: Checking hasValidData for entity:', entity.id);
+        console.log('📊 Entity widgetData status:', {
+            hasWidgetData: !!entity.widgetData,
+            isLoaded: entity.widgetData?.isLoaded,
+            hasRawData: !!entity.widgetData?.rawData,
+            rawDataLength: entity.widgetData?.rawData?.length,
+            source: entity.widgetData?.source
+        });
+        console.log('📋 Entity dataBinding status:', {
+            hasDataBinding: !!entity.dataBinding,
+            dimensionsLength: entity.dataBinding?.dimensions?.length || 0,
+            measuresLength: entity.dataBinding?.measures?.length || 0
+        });
+        
+        // 🚀 PRIORITÉ 1: Vérifier si l'entité a des données auto-poussées (widgetData)
+        if (entity.widgetData && entity.widgetData.isLoaded && entity.widgetData.rawData && entity.widgetData.rawData.length > 0) {
+            console.log('✅ DualModeRenderer: Entity has valid auto-pushed data');
+            return true;
+        }
+        
+        // 🔄 PRIORITÉ 2: Vérifier les dataBinding classiques
+        if (!entity.dataBinding) {
+            console.log('❌ DualModeRenderer: No dataBinding found');
+            return false;
+        }
+        
+        const hasClassicData = entity.dataBinding.dimensions.length > 0 || entity.dataBinding.measures.length > 0;
+        console.log(hasClassicData ? '✅ DualModeRenderer: Entity has valid dataBinding' : '❌ DualModeRenderer: No valid dataBinding');
+        
+        return hasClassicData;
     }
 
     getWidgetIcon(type) {
@@ -743,21 +962,41 @@ class WidgetDualModeRenderer {
 
     convertEntityDataToWidgetFormat(entity) {
         console.log('🔄 DualModeRenderer: Converting entity data for', entity.type);
+        console.log('📊 Entity widgetData:', entity.widgetData);
         
-        // Vérifier si l'entité a des données binding
+        // Vérifier si l'entité a des données préparées (nouveau système)
+        if (entity.widgetData && entity.widgetData.isLoaded && entity.widgetData.formattedData) {
+            console.log('✅ DualModeRenderer: Using pre-formatted data from entity');
+            const formattedData = entity.widgetData.formattedData;
+            console.log('📊 Pre-formatted data:', formattedData);
+            return formattedData;
+        }
+        
+        // Vérifier si l'entité a des données brutes à formater (fallback)
+        if (entity.widgetData && entity.widgetData.rawData && entity.widgetData.rawData.length > 0) {
+            console.log('🔄 DualModeRenderer: Formatting raw data from entity');
+            const { dimensions, measures } = entity.dataBinding || { dimensions: [], measures: [] };
+            
+            if (dimensions.length === 0 || measures.length === 0) {
+                throw new Error('No data binding configuration found for raw data formatting');
+            }
+            
+            return this.formatDataForWidget(entity.widgetData.rawData, dimensions, measures, entity.type);
+        }
+        
+        // Vérifier si l'entité a des données binding (ancien système - fallback)
         const { dimensions, measures } = entity.dataBinding || { dimensions: [], measures: [] };
         
         if (dimensions.length === 0 || measures.length === 0) {
             console.log('⚠️ DualModeRenderer: No data binding for entity', entity.id);
-            return [];
+            throw new Error('No data found for this widget. Please assign data using the Feeding Panel.');
         }
         
-        // Récupérer les vraies données via le DataModel global
+        // Tentative de récupération via DataModel (ancien système - dernier recours)
         try {
             if (typeof window !== 'undefined' && window.dataModel) {
-                console.log('📊 DualModeRenderer: Getting real data from DataModel');
+                console.log('📊 DualModeRenderer: Getting real data from DataModel (fallback)');
                 
-                // Utiliser getDataForBinding pour récupérer les données réelles
                 const realData = window.dataModel.getDataForBinding(entity.dataBinding);
                 
                 if (realData && realData.length > 0) {
@@ -770,12 +1009,11 @@ class WidgetDualModeRenderer {
                 console.warn('⚠️ DualModeRenderer: DataModel not available in window');
             }
         } catch (error) {
-            console.error('❌ DualModeRenderer: Error accessing real data:', error);
-            throw new Error(`Unable to access widget data: ${error.message}`);
+            console.error('❌ DualModeRenderer: Error accessing DataModel:', error);
         }
         
-        // Erreur propre si aucune vraie donnée n'est disponible
-        throw new Error('No real data available for this widget. Please assign data using the Feeding Panel.');
+        // Erreur propre si aucune donnée n'est disponible
+        throw new Error('No data available for this widget. Please assign data using the Feeding Panel.');
     }
 
     /**
@@ -829,8 +1067,10 @@ class WidgetDualModeRenderer {
                 let label = 'Unknown';
                 if (dimensions.length > 0) {
                     const dimension = dimensions[0]; // Prendre la première dimension
-                    const dimensionField = dimension.name || dimension.fieldId || dimension.field || dimension.id;
+                    const dimensionField = this.getFieldName(dimension);
                     console.log(`🔍 Looking for dimension field '${dimensionField}' in:`, dataRow);
+                    console.log(`🔍 Available keys in dataRow:`, Object.keys(dataRow));
+                    console.log(`🔍 Full dataRow contents:`, JSON.stringify(dataRow, null, 2));
                     
                     // Essayer différentes approches pour trouver la valeur
                     label = dataRow[dimensionField];
@@ -864,8 +1104,9 @@ class WidgetDualModeRenderer {
                 let value = 0;
                 if (measures.length > 0) {
                     const measure = measures[0]; // Prendre la première mesure
-                    const measureField = measure.name || measure.fieldId || measure.field || measure.id;
+                    const measureField = this.getFieldName(measure);
                     console.log(`🔍 Looking for measure field '${measureField}' in:`, dataRow);
+                    console.log(`🔍 Available keys in dataRow for measure:`, Object.keys(dataRow));
                     
                     value = dataRow[measureField];
                     

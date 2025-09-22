@@ -121,10 +121,6 @@ window.DragDropManager = class DragDropManager {
         });
 
         document.addEventListener('dragover', (e) => {
-            console.log('🔍 DragDropManager: dragover event triggered');
-            console.log('🔍 DragDropManager: activeField exists:', !!this.activeField);
-            console.log('🔍 DragDropManager: activeField type:', this.activeField?.type);
-            
             // Recherche dans le Shadow DOM aussi
             let dropZone = e.target.closest('[data-drop-zone]');
             
@@ -136,25 +132,12 @@ window.DragDropManager = class DragDropManager {
                     const elementFromPoint = feedingPanel.shadowRoot.elementFromPoint(e.clientX, e.clientY);
                     if (elementFromPoint) {
                         dropZone = elementFromPoint.closest('[data-drop-zone]');
-                        console.log('🔍 DragDropManager: Found in Shadow DOM:', dropZone?.dataset.dropZone);
-            console.log('🕐 TIMESTAMP: ', new Date().toLocaleTimeString(), '- VERSION 2.0');
             
-            if (dropZone) {
-                console.log('🔍 DragDropManager: dragover detected, dropZone:', dropZone.dataset.dropZone);
-                console.log('🔍 DragDropManager: dropZone element:', dropZone.tagName, dropZone.className);
-                console.log('🔍 DragDropManager: activeField:', this.activeField);
-                
-                // Nouvelle logique : si on trouve dans Shadow DOM, on est forcément dans feeding-panel
-                const isInFeedingPanel = true; // Puisque trouvé via feedingPanel.shadowRoot
-                console.log('🔍 DragDropManager: Shadow DOM = automatically in feeding-panel:', isInFeedingPanel);
-                
-                if (this.activeField && this.activeField.type === 'field') {
-                    console.log('🔄 DragDropManager: PREVENTING DEFAULT - allowing field drop (Shadow DOM)');
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                    dropZone.classList.add('drag-over');
-                    return; // Sortir ici pour éviter le code suivant
-                }
+            if (dropZone && this.activeField && this.activeField.type === 'field') {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                dropZone.classList.add('drag-over');
+                return;
             }
                     }
                 }
@@ -197,8 +180,6 @@ window.DragDropManager = class DragDropManager {
         });
 
         document.addEventListener('drop', (e) => {
-            console.log('🎯 DragDropManager: DROP event triggered!');
-            
             // Même logique que dragover : chercher dans Shadow DOM
             let dropZone = e.target.closest('[data-drop-zone]');
             
@@ -208,23 +189,15 @@ window.DragDropManager = class DragDropManager {
                     const elementFromPoint = feedingPanel.shadowRoot.elementFromPoint(e.clientX, e.clientY);
                     if (elementFromPoint) {
                         dropZone = elementFromPoint.closest('[data-drop-zone]');
-                        console.log('🎯 DragDropManager: Found drop zone in Shadow DOM:', dropZone?.dataset.dropZone);
                     }
                 }
             }
             
-            console.log('🎯 DragDropManager: dropZone found:', !!dropZone);
-            console.log('🎯 DragDropManager: activeField exists:', !!this.activeField);
-            
             // Only handle if this is a field drop zone AND we have an active field
             if (dropZone && this.activeField && this.activeField.type === 'field') {
-                console.log('🎯 DragDropManager: All conditions met, processing drop');
                 e.preventDefault();
                 dropZone.classList.remove('drag-over');
                 this.handleFieldDrop(e, dropZone);
-                console.log('🔄 DragDropManager: DROP - field dropped on data assignment zone');
-            } else {
-                console.log('❌ DragDropManager: Drop conditions not met');
             }
         });
     }
@@ -261,26 +234,21 @@ window.DragDropManager = class DragDropManager {
         console.log('🎯 DragDropManager: handleFieldDrop called!');
         console.log('🎯 DragDropManager: activeField:', this.activeField);
         console.log('🎯 DragDropManager: dropZone:', dropZone.dataset.dropZone);
-        
+
         if (!this.activeField || this.activeField.type !== 'field') {
-            console.log('❌ DragDropManager: No active field or wrong type');
             return;
         }
 
         // Get the actual field data from the drag event
         try {
             const fieldData = JSON.parse(e.dataTransfer.getData('application/json'));
-            console.log('🎯 DragDropManager: fieldData from drag:', fieldData);
             
             if (fieldData.type !== 'field') {
-                console.log('❌ DragDropManager: Wrong field data type');
                 return; // Only handle field drops
             }
             
             const dropType = dropZone.dataset.dropZone;
             const fieldCategory = fieldData.category;
-            
-            console.log('🎯 DragDropManager: Processing drop - type:', dropType, 'category:', fieldCategory);
 
             // Validation des drops selon les règles WebI
             if (dropType === 'dimensions' && fieldCategory !== 'DIMENSION') {
@@ -294,31 +262,21 @@ window.DragDropManager = class DragDropManager {
             }
 
             // Notifier les composants du drop réussi
-            console.log('🔧 DragDropManager: dropHandlers count:', this.dropHandlers.length);
-            this.dropHandlers.forEach((handler, index) => {
-                console.log(`🔧 DragDropManager: Calling handler ${index} (type: ${typeof handler}) with:`, {fieldData, dropType});
-                console.log(`🔧 DragDropManager: Handler function:`, handler.toString().substring(0, 100) + '...');
+            this.dropHandlers.forEach((handler) => {
                 try {
-                    const result = handler(fieldData, dropZone, dropType);
-                    console.log(`✅ DragDropManager: Handler ${index} result:`, result);
+                    handler(fieldData, dropZone, dropType);
                 } catch (error) {
-                    console.error(`❌ DragDropManager: Handler ${index} error:`, error);
+                    console.error('❌ DragDropManager: Handler error:', error);
                 }
             });
 
             // Si pas de handlers, mettre à jour directement le feeding-panel
             if (this.dropHandlers.length === 0) {
-                console.log('🔧 DragDropManager: No handlers, updating feeding-panel directly');
                 const feedingPanel = document.querySelector('feeding-panel');
                 if (feedingPanel && feedingPanel.addField) {
                     feedingPanel.addField(fieldData, dropType);
-                    console.log('✅ DragDropManager: Direct update to feeding-panel');
-                } else {
-                    console.log('❌ DragDropManager: feeding-panel or addField method not found');
                 }
             }
-
-            console.log('✅ DragDropManager: Field dropped', fieldData.name, 'on', dropType);
         } catch (error) {
             console.warn('⚠️ DragDropManager: Invalid field data');
         }

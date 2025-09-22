@@ -45,10 +45,30 @@ class WidgetLibrary extends HTMLElement {
             if (window.widgetDiscovery) {
                 this.dynamicWidgetsLoaded = true; // Marquer avant le chargement
                 
+                // ÉTAPE 1: Découvrir les widgets
                 const discoveredWidgets = await window.widgetDiscovery.discoverWidgets();
                 console.log('📦 Widget Library: Discovered widgets:', discoveredWidgets);
                 
-                // Convert discovered widgets to library format
+                // ÉTAPE 2: Charger les widgets découverts (AJOUTÉ)
+                if (window.widgetManager) {
+                    console.log('🔄 Widget Library: Loading discovered widgets into memory...');
+                    const loadResults = await window.widgetDiscovery.loadAllDiscoveredWidgets(window.widgetManager);
+                    console.log('📊 Widget Library: Load results:', loadResults);
+                    
+                    // ÉTAPE 2.5: Vérifier les definitions chargées
+                    const availableTypes = window.widgetManager.getAvailableWidgetTypes();
+                    console.log('🔍 Widget Library: Available widget types after loading:', availableTypes);
+                    
+                    const availableDefinitions = window.widgetManager.getAvailableWidgetDefinitions();
+                    console.log('🔍 Widget Library: Available widget definitions:', availableDefinitions.map(d => d.type));
+                    
+                    // Diagnostic complet de l'état du WidgetManager
+                    window.widgetManager.getState();
+                } else {
+                    console.warn('⚠️ Widget Library: WidgetManager not available, skipping widget loading');
+                }
+                
+                // ÉTAPE 3: Convert discovered widgets to library format
                 this.availableWidgets = this.convertDiscoveredWidgets(discoveredWidgets);
                 
                 // Re-render with discovered widgets
@@ -102,6 +122,12 @@ class WidgetLibrary extends HTMLElement {
                 description: 'Display key performance indicators',
                 requirements: { dimensions: 0, measures: 1 },
                 size: { width: 4, height: 3 }, type: 'kpi'
+            },
+            'widget_tile_v1.1.js': {
+                id: 'tile-v1.1', name: 'KPI Tile v1.1', icon: '📊',
+                description: 'Enhanced KPI tile with new render function',
+                requirements: { dimensions: 1, measures: 1 },
+                size: { width: 4, height: 3 }, type: 'kpi'
             }
         };
 
@@ -127,6 +153,7 @@ class WidgetLibrary extends HTMLElement {
             'pie-chart': 'widget_pie-chart_v1.0.js',
             'table': 'widget_table_v1.0.js',
             'tile': 'widget_tile_v1.0.js',
+            'tile-v1.1': 'widget_tile_v1.1.js',
             'kpi-card': 'widget_kpi-card_v1.0.js'
         };
         

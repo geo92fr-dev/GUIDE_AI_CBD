@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Widget Library</title>
+</head>
+<body>
+    <h2>Debug Widget Library</h2>
+    <button onclick="testAPI()">Test API</button>
+    <button onclick="forceReload()">Force Reload Library</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            try {
+                const response = await fetch('http://localhost:8080/api/discover-widgets');
+                const data = await response.json();
+                result.innerHTML = '<h3>API Response:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                result.innerHTML = '<h3>Error:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+
+        async function forceReload() {
+            try {
+                // Accéder à la widget library dans l'application principale
+                const widgetLibrary = window.parent?.document?.querySelector('widget-library');
+                if (widgetLibrary) {
+                    await widgetLibrary.loadDynamicWidgets();
+                    document.getElementById('result').innerHTML = '<h3>Widget Library reloaded!</h3>';
+                } else {
+                    document.getElementById('result').innerHTML = '<h3>Widget Library not found</h3>';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Error reloading:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

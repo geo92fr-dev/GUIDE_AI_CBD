@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug CSV Sources</title>
+</head>
+<body>
+    <h1>🔍 Debug CSV Data Sources</h1>
+    <div id="debug-output"></div>
+    
+    <script src="src/services/csv-data-source-service.js"></script>
+    <script>
+        async function debugCSVSources() {
+            const output = document.getElementById('debug-output');
+            
+            try {
+                output.innerHTML = '<p>⏳ Initializing service...</p>';
+                
+                if (!window.csvDataSourceService) {
+                    output.innerHTML = '<p>❌ CSV Service not found</p>';
+                    return;
+                }
+                
+                output.innerHTML = '<p>✅ Service found, discovering sources...</p>';
+                
+                const sources = await window.csvDataSourceService.discoverCSVSources();
+                
+                let html = `<h3>✅ Discovered ${sources.length} sources:</h3><ul>`;
+                sources.forEach(source => {
+                    html += `<li><strong>${source.fileName}</strong> - ${source.name} (${source.rowCount} rows)</li>`;
+                });
+                html += '</ul>';
+                
+                // Test kpi-data.csv specifically
+                html += '<h3>🎯 Testing kpi-data.csv specifically:</h3>';
+                try {
+                    const response = await fetch('samples/kpi-data.csv');
+                    if (response.ok) {
+                        const content = await response.text();
+                        html += `<p>✅ kpi-data.csv found and accessible (${content.length} chars)</p>`;
+                        html += `<p>First line: <code>${content.split('\\n')[0]}</code></p>`;
+                    } else {
+                        html += `<p>❌ kpi-data.csv not accessible (status: ${response.status})</p>`;
+                    }
+                } catch (error) {
+                    html += `<p>❌ Error fetching kpi-data.csv: ${error.message}</p>`;
+                }
+                
+                output.innerHTML = html;
+                
+            } catch (error) {
+                output.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        setTimeout(debugCSVSources, 1000);
+    </script>
+</body>
+</html>

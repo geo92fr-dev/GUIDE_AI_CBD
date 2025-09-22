@@ -135,17 +135,15 @@ class DashboardCanvasDemoEntity extends HTMLElement {
                     availableWidgets = widgetLibrary.availableWidgets;
                     console.log('[DemoCanvas] Widgets de la bibliothèque:', availableWidgets);
                 } else {
-                    // Fallback avec mapping manuel si la bibliothèque n'est pas prête
-                    availableWidgets = this.createWidgetMappingFromDiscovered(discoveredWidgets);
+                    throw new Error('Widget library not ready - no widgets available');
                 }
             } catch (error) {
                 console.error('[DemoCanvas] Erreur lors de la découverte des widgets:', error);
-                // Fallback vers la liste statique minimum
-                availableWidgets = this.getFallbackWidgets();
+                throw new Error(`Demo Canvas: Widget discovery failed - ${error.message}`);
             }
         } else {
-            console.warn('[DemoCanvas] Service de découverte non disponible, utilisation du fallback');
-            availableWidgets = this.getFallbackWidgets();
+            console.error('[DemoCanvas] Service de découverte non disponible');
+            throw new Error('Demo Canvas: Widget discovery service not available');
         }
         
         console.log('[DemoCanvas] Widgets à injecter:', availableWidgets);
@@ -330,18 +328,6 @@ class DashboardCanvasDemoEntity extends HTMLElement {
                 return widgetMappings[filename];
             })
             .filter(widget => widget !== undefined);
-    }
-
-    /**
-     * Widgets de fallback en cas d'échec de la découverte
-     */
-    getFallbackWidgets() {
-        return [
-            { id: 'bar-chart', name: 'Bar Chart', type: 'chart', requirements: { dimensions: 1, measures: 1 }, size: { width: 6, height: 4 } },
-            { id: 'line-chart', name: 'Line Chart', type: 'chart', requirements: { dimensions: 1, measures: 1 }, size: { width: 8, height: 4 } },
-            { id: 'pie-chart', name: 'Pie Chart', type: 'chart', requirements: { dimensions: 1, measures: 1 }, size: { width: 4, height: 4 } },
-            { id: 'table', name: 'Table', type: 'table', requirements: { dimensions: 0, measures: 0 }, size: { width: 12, height: 6 } }
-        ];
     }
 }
 

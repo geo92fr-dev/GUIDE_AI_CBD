@@ -37,6 +37,14 @@ class WidgetEntity {
             lastApplied: config.dataBinding?.lastApplied || null
         };
         
+        // === DONNÉES WIDGET FORMATÉES ===
+        this.widgetData = {
+            rawData: config.widgetData?.rawData || [], // Données CSV brutes
+            formattedData: config.widgetData?.formattedData || [], // Données formatées pour le widget
+            lastUpdated: config.widgetData?.lastUpdated || null,
+            isLoaded: config.widgetData?.isLoaded || false
+        };
+        
         // === LAYOUT & STYLE ===
         this.layout = {
             position: config.layout?.position || { x: 0, y: 0 },

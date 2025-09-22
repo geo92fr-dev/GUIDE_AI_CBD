@@ -1,33 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 WIDGETS Platform - Business Dashboard Builder</title>
-    
-    <!-- CSS Theme System -->
+    <title>🧩 Widget Platform - Simplified</title>
     <link rel="stylesheet" href="src/themes/business-theme.css">
-    <link rel="stylesheet" href="src/themes/responsive-layout.css">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
     
     <style>
-        /* Application Shell - 4 Panels Layout */
+        :root {
+            --primary-blue: #0A84FF;
+            --secondary-blue: #8E8E93;
+            --background-primary: #000000;
+            --background-secondary: #1C1C1E;
+            --surface-primary: #0F1419;
+            --border-light: #2C2C2E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-primary);
+        }
+
         .app-shell {
             display: grid;
-            grid-template-columns: 250px 1fr 300px 280px;
+            grid-template-columns: 250px 1fr;
             grid-template-rows: 60px 1fr;
             grid-template-areas: 
-                "header header header header"
-                "left-panel canvas right-panel-1 right-panel-2";
+                "header header"
+                "left-panel canvas";
             height: 100vh;
             width: 100vw;
             overflow: hidden;
             background: var(--background-primary);
-        }
-        .app-shell.canvas-demo-mode {
-            grid-template-columns: 250px 1fr 0px 280px;
         }
         
         .app-header {
@@ -38,13 +55,12 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 var(--spacing-lg);
-            border-bottom: 2px solid var(--primary-blue-dark);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .left-panel {
             grid-area: left-panel;
-            background: var(--background-primary);
+            background: var(--background-secondary);
             border-right: 1px solid var(--border-light);
             overflow: hidden;
             display: flex;
@@ -53,25 +69,7 @@
         
         .canvas {
             grid-area: canvas;
-            background: var(--background-secondary);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .right-panel-1 {
-            grid-area: right-panel-1;
             background: var(--background-primary);
-            border-left: 1px solid var(--border-light);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .right-panel-2 {
-            grid-area: right-panel-2;
-            background: var(--background-primary);
-            border-left: 1px solid var(--border-light);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -81,82 +79,41 @@
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
-            font-size: 1.2em;
-            font-weight: 600;
         }
         
-        .app-actions {
+        .header-controls {
             display: flex;
+            align-items: center;
             gap: var(--spacing-sm);
         }
         
         .btn-header {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
             color: white;
-            border: 1px solid rgba(255,255,255,0.2);
             padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--radius-sm);
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9em;
+            font-size: 12px;
+            transition: all 0.2s;
         }
         
         .btn-header:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.4);
-        }
-        
-        .left-panel {
-            grid-area: left-panel;
-            background: var(--background-primary);
-            border-right: 1px solid var(--border-light);
-            overflow-y: auto;
-        }
-        
-        .canvas {
-            grid-area: canvas;
-            background: var(--background-secondary);
-            position: relative;
-            overflow: auto;
-        }
-        
-        .right-panel-1 {
-            grid-area: right-panel-1;
-            background: var(--background-primary);
-            border-left: 1px solid var(--border-light);
-            border-right: 1px solid var(--border-light);
-            overflow-y: auto;
-        }
-        
-        .right-panel-2 {
-            grid-area: right-panel-2;
-            background: var(--background-primary);
-            border-left: 1px solid var(--border-light);
-            overflow-y: auto;
+            background: rgba(255,255,255,0.3);
         }
         
         /* Responsive breakpoints */
-        @media (max-width: 1200px) {
-            .app-shell {
-                grid-template-columns: 200px 1fr 250px 250px;
-            }
-        }
-        
         @media (max-width: 992px) {
             .app-shell {
                 grid-template-columns: 1fr;
-                grid-template-rows: 60px auto auto auto 1fr;
+                grid-template-rows: 60px auto 1fr;
                 grid-template-areas: 
                     "header"
                     "left-panel"
-                    "right-panel-2"
-                    "right-panel-1"
                     "canvas";
             }
             
-            .left-panel,
-            .right-panel-1,
-            .right-panel-2 {
+            .left-panel {
                 max-height: 300px;
                 overflow-y: auto;
             }
@@ -165,840 +122,190 @@
                 min-height: 400px;
             }
         }
-        
-        @media (max-width: 768px) {
-            .app-shell {
-                grid-template-columns: 1fr;
-                grid-template-rows: 60px auto auto auto 1fr;
-            }
-            
-            .app-header {
-                padding: 0 var(--spacing-md);
-            }
-            
-            .app-title {
-                font-size: 1em;
-            }
-            
-            .version-badge {
-                display: none;
-            }
-        }
-        
-        /* Data Source Selector */
-        .data-source-selector {
-            width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: var(--background-secondary);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            font-size: 0.9em;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .data-source-selector:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 2px rgba(27, 144, 255, 0.2);
-        }
-        
-        .data-source-selector option {
-            background: var(--background-primary);
-            color: var(--text-primary);
-            padding: var(--spacing-sm);
-        }
-        
-        .data-source-container {
+
+        /* Panel styling */
+        .panel-header {
             padding: var(--spacing-md);
             background: var(--background-primary);
             border-bottom: 1px solid var(--border-light);
         }
         
-        .data-source-label {
-            display: block;
-            margin-bottom: var(--spacing-xs);
-            font-size: 0.85em;
-            color: var(--text-secondary);
-            font-weight: 500;
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .panel-icon {
+            font-size: 16px;
         }
 
-        /* Panel Headers */
-        .panel-header {
-            background: var(--primary-blue);
-            color: white;
-            padding: var(--spacing-sm) var(--spacing-md);
-            font-weight: 600;
-            font-size: 0.95em;
+        /* Display area styling */
+        .canvas-header {
+            padding: var(--spacing-md);
+            background: var(--background-secondary);
             border-bottom: 1px solid var(--border-light);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
         
-        .panel-title {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
+        .canvas-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Hidden elements */
+        .hidden-file-input {
+            display: none;
         }
         
-        .panel-icon {
-            font-size: 1.1em;
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
         }
-        
-        /* Loading state */
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            color: var(--text-secondary);
-            font-style: italic;
-        }
-        
-        .loading::before {
-            content: "⏳";
-            margin-right: var(--spacing-sm);
-            animation: spin 2s linear infinite;
-        }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+
+        /* Canvas hidden state */
+        .canvas-hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
     <div class="app-shell">
-        <!-- Application Header -->
+        <!-- Header -->
         <header class="app-header">
             <div class="app-title">
-                <span class="app-icon">📊</span>
-                <span>WIDGETS Platform</span>
-                <span class="version-badge">MVP v1.0</span>
+                <span>🧩</span>
+                <h1>Widget Platform</h1>
+                <span class="version">v3.0 - Simplified</span>
             </div>
-            <div class="app-actions">
-                <button class="btn-header" id="save-dashboard">💾 Save</button>
-                <button class="btn-header" id="load-dashboard">📂 Load</button>
-                <button class="btn-header" id="export-dashboard">📤 Export</button>
-                <button class="btn-header" id="test-widget-discovery">🧪 Test Discovery</button>
-                <button class="btn-header" id="toggle-all-view">👁️ View All</button>
-                <button class="btn-header" id="toggle-all-info">ℹ️ Info All</button>
-                <button class="btn-header" id="help-toggle">❓ Help</button>
+            <div class="header-controls">
+                <widget-view-toggle id="global-toggle" view-mode="true"></widget-view-toggle>
+                <button class="btn-header" id="clear-widgets" title="Clear all widgets">🗑️ Clear</button>
+                <button class="btn-header" id="export-canvas" title="Export canvas">📤 Export</button>
             </div>
         </header>
-        
-        <!-- LEFT PANEL: Widget Library -->
+
+        <!-- Left Panel: Widget Library -->
         <aside class="left-panel">
-            <div class="panel-header">
-                <div class="panel-title">
-                    <span class="panel-icon">🧩</span>
-                    <span>Widget Library</span>
-                </div>
-            </div>
-            <!-- Widget Library Component will be loaded here -->
             <widget-library></widget-library>
         </aside>
-        
-        <!-- CANVAS: Dashboard Builder -->
+
+        <!-- Main Display Area -->
         <main class="canvas">
-            <div class="panel-header">
-                <div class="panel-title">
-                    <span class="panel-icon">🎨</span>
-                    <span>Dashboard Canvas</span>
-                </div>
-                <div class="canvas-actions">
-                    <select id="canvas-type-selector" class="btn-header canvas-selector" title="Select canvas type">
-                        <option value="main" selected>🖼️ Canvas principal</option>
-                        <option value="demo">✨ Canvas démo (auto)</option>
-                    </select>
-                    <button class="btn-header" id="clear-widgets" title="Clear all widgets">🗑️ Clear</button>
-                    <button class="btn-header" id="export-canvas" title="Export canvas">📤 Export</button>
-                </div>
+            <div class="canvas-content">
+                <!-- Simple Widget Display -->
+                <dashboard-canvas-entity id="main-canvas"></dashboard-canvas-entity>
             </div>
-            <!-- Dashboard Canvas Component - Entity System -->
-            <dashboard-canvas-entity id="main-canvas"></dashboard-canvas-entity>
-            <dashboard-canvas-demo-entity id="demo-canvas" class="canvas-hidden"></dashboard-canvas-demo-entity>
         </main>
-        
-        <!-- RIGHT PANEL 1: Feeding Panel (WebI Data Assignment) -->
-    <aside class="right-panel-1" id="right-panel-1">
-            <div class="panel-header">
-                <div class="panel-title">
-                    <span class="panel-icon">⚙️</span>
-                    <span>Data Assignment</span>
-                </div>
-            </div>
-            <!-- Feeding Panel Component will be loaded here -->
-            <feeding-panel></feeding-panel>
-        </aside>
-        
-        <!-- RIGHT PANEL 2: Available Objects (WebI Dictionary) -->
-        <aside class="right-panel-2">
-            <!-- Data Source Selector -->
-            <div class="data-source-container">
-                <label class="data-source-label">📊 Select Data Source:</label>
-                <select class="data-source-selector" id="data-source-selector" title="Select data source">
-                    <option value="" title="Choose a dataset...">Choose a dataset...</option>
-                    <option value="samples/sales-data.csv" title="Sales Data">📊 Sales Data</option>
-                    <option value="samples/marketing-data.csv" title="Marketing Campaigns">📈 Marketing Campaigns</option>
-                    <option value="samples/production-data.csv" title="Production Lines">🏭 Production Lines</option>
-                    <option value="samples/customer-orders.csv" title="Customer Orders">🛒 Customer Orders</option>
-                    <option value="samples/stock-market-data.csv" title="Stock Market">💹 Stock Market</option>
-                    <option value="samples/finance-data.csv" title="Finance Data">💰 Finance Data</option>
-                    <option value="samples/hr-data.csv" title="HR Data">👥 HR Data</option>
-                </select>
-                <button id="feeding-demo-btn" class="btn-header">⚡ Feeding auto demo</button>
-            </div>
-            
-            <div class="panel-header">
-                <div class="panel-title">
-                    <span class="panel-icon">�</span>
-                    <span>Available Objects</span>
-                </div>
-            </div>
-            <!-- Available Objects Panel Component will be loaded here -->
-            <available-objects-panel></available-objects-panel>
-        </aside>
     </div>
     
-    <!-- Hidden file input for CSV loading -->
-    <label for="csv-file-input" class="visually-hidden">Import CSV</label>
-    <input type="file" id="csv-file-input" accept=".csv" class="hidden-file-input" title="Import CSV">
+    <!-- Log Configuration (Load First) -->
+    <script src="src/utils/log-config.js"></script>
     
-    <!-- Core Data System -->
-    <script src="src/data/data-parser.js"></script>
-    <script src="src/data/data-model.js"></script>
-    
-    <!-- Simple Drag Drop Bypass System -->
+    <!-- Simple Drag Drop System -->
     <script src="src/core/simple-drag-drop.js"></script>
     
-    <!-- Entity System (Auto-loading) -->
-    <script src="src/entity-system-loader.js"></script>
+    <!-- Widget Discovery Service -->
+    <script src="src/services/widget-discovery-simple.js?v=3"></script>
+    
+    <!-- Renderer System (Load BEFORE components) -->
+    <script src="src/renderers/widget-dual-mode-renderer.js"></script>
     
     <!-- Web Components -->
+    <script src="src/core/widget-entity.js"></script>
     <script src="src/core/widget-manager.js"></script>
     <script src="src/components/widget-library.js"></script>
+    <script src="src/components/dashboard-canvas-simple.js"></script>
+    
+    <!-- Widget Toggle System -->
     <script src="src/components/widget-view-toggle.js"></script>
-    <script src="src/renderers/widget-dual-mode-renderer.js"></script>
-    <script src="src/components/dashboard-canvas-entity.js"></script>
-    <script src="src/components/feeding-panel.js"></script>
-    <script src="src/components/available-objects-panel.js"></script>
-    <script src="src/components/dashboard-canvas-demo-entity.js"></script>
     
-    <!-- Widget Implementations -->
-    <!-- <script src="src/widgets/widget-base.js"></script> Fichier manquant, désactivé -->
-    <!-- <script src="src/widgets/tile_info.js"></script> Dépend de WidgetBase, désactivé temporairement -->
-    
-    <!-- Widget Discovery Service -->
-    <script src="src/services/widget-discovery.js"></script>
-    
-    <!-- Widget Discovery Tester -->
-    <script src="src/utils/widget-discovery-tester.js"></script>
-    
-    <!-- Unified System Integration -->
-    <script src="src/migration/unified-system.js"></script>
-    
-    <!-- Test Script for Canvas ↔ Feeding Panel Sync -->
-    <script src="test-canvas-feeding-sync.js"></script>
-    
+    <!-- Application Initialization -->
     <script>
-        // Application Initialization with Unified System
+        // Application Initialization with Ultra-Simplified System
         document.addEventListener('DOMContentLoaded', function() {
-            // DIAGNOSTIC GLOBAL : log tous les clics sur la page
-            document.body.addEventListener('click', function(e) {
-                console.log('[DIAG] Clic détecté sur', e.target, 'id:', e.target.id);
-            }, true);
-            // Canvas type selector logic
-            const canvasTypeSelector = document.getElementById('canvas-type-selector');
+            console.log('🎯 Widget Platform - Ultra-Simplified Architecture Loading...');
+            
+            // Simple canvas management
             const mainCanvas = document.getElementById('main-canvas');
-            const demoCanvas = document.getElementById('demo-canvas');
-            const rightPanel1 = document.getElementById('right-panel-1');
-            const appShell = document.querySelector('.app-shell');
-            const feedingDemoBtn = document.getElementById('feeding-demo-btn');
-            // Par défaut, afficher le canvas principal au chargement
-            mainCanvas.style.display = '';
-            demoCanvas.style.display = 'none';
-            demoCanvas.classList.add('canvas-hidden'); // Cacher le canvas demo
-            rightPanel1.style.display = '';
-            appShell.classList.remove('canvas-demo-mode');
-            canvasTypeSelector.value = 'main';
             
-            // Ne pas initialiser le canvas démo au chargement - il sera initialisé si l'utilisateur le sélectionne
-            console.log('[INIT] Canvas principal sélectionné par défaut');
-            
-            if (canvasTypeSelector.value === 'demo' && feedingDemoBtn) {
-                feedingDemoBtn.style.display = '';
-            } else if (feedingDemoBtn) {
-                feedingDemoBtn.style.display = 'none';
+            // Ensure canvas is visible
+            if (mainCanvas) {
+                mainCanvas.style.display = '';
+                console.log('✅ Widget display area ready');
             }
-            canvasTypeSelector.addEventListener('change', function() {
-                console.log('[CANVAS SWITCH] Switching to:', canvasTypeSelector.value);
-                if (canvasTypeSelector.value === 'main') {
-                    mainCanvas.style.display = '';
-                    demoCanvas.style.display = 'none';
-                    demoCanvas.classList.add('canvas-hidden'); // Masquer avec la classe
-                    rightPanel1.style.display = '';
-                    appShell.classList.remove('canvas-demo-mode');
-                    if (feedingDemoBtn) feedingDemoBtn.style.display = 'none';
-                } else {
-                    mainCanvas.style.display = 'none';
-                    demoCanvas.style.display = '';
-                    demoCanvas.classList.remove('canvas-hidden'); // Supprimer la classe qui cache
-                    rightPanel1.style.display = 'none';
-                    appShell.classList.add('canvas-demo-mode');
-                    if (feedingDemoBtn) feedingDemoBtn.style.display = '';
-                    
-                    // Initialiser le canvas démo seulement maintenant
-                    console.log('🎨 Demo canvas selected - initializing...');
-                    window.initializeDemoCanvas().then(success => {
-                        if (success) {
-                            console.log('✅ Demo canvas ready to use');
-                        } else {
-                            console.error('❌ Demo canvas initialization failed');
-                        }
-                    });
-                }
-            });
-            console.log('🚀 WIDGETS Platform MVP v1.0 starting...');
             
-            // Initialize Unified Widget Platform
-            window.WidgetPlatform.init();
-            
-            // Protection globale contre chargements multiples
-            if (window.widgetsLoadingInProgress) {
-                console.log('⚠️ Widgets loading already in progress, skipping');
-                return;
-            }
-            window.widgetsLoadingInProgress = true;
-            
-            // Function to initialize demo canvas on-demand
-            window.initializeDemoCanvas = async function() {
-                console.log('🔄 Starting demo canvas initialization...');
-                try {
-                    // Vérifier si déjà initialisé
-                    const demoCanvas = document.getElementById('demo-canvas');
-                    if (demoCanvas && demoCanvas.hasAttribute('data-initialized')) {
-                        console.log('✅ Demo canvas already initialized');
-                        return true;
-                    }
-                    
-                    // S'assurer que les widgets sont chargés
-                    if (!window.widgetDiscovery || window.widgetDiscovery.getLoadedWidgets().size === 0) {
-                        console.log('🔄 Loading widgets first...');
-                        const discoveredWidgets = await window.widgetDiscovery.discoverWidgets();
-                        console.log(`📦 Discovered ${discoveredWidgets.length} widgets for demo`);
-                        
-                        const canvas = document.querySelector('dashboard-canvas-entity');
-                        if (canvas && canvas.widgetManager) {
-                            await window.widgetDiscovery.loadAllDiscoveredWidgets(canvas.widgetManager);
-                        }
-                    }
-                    
-                    // Initialiser le canvas démo
-                    if (demoCanvas && typeof demoCanvas.init === 'function') {
-                        console.log('🎨 Initializing demo canvas...');
-                        await demoCanvas.init();
-                        demoCanvas.setAttribute('data-initialized', 'true');
-                        console.log('✅ Demo canvas initialized successfully');
-                        return true;
-                    }
-                } catch (error) {
-                    console.error('❌ Demo canvas initialization failed:', error);
-                    return false;
-                }
-            };
-            
-            // Load basic widgets for the widget library only (protection renforcée)
-            setTimeout(async () => {
-                if (window.widgetsLoaded || window.widgetsCurrentlyLoading) {
-                    console.log('✅ Widgets already loaded or loading, skipping');
-                    return;
-                }
-                
-                try {
-                    console.log('🔄 Loading basic widgets for library...');
-                    window.widgetsCurrentlyLoading = true; // Marquer comme en cours
-                    
-                    // Découvrir les widgets sans les charger automatiquement
-                    const discoveredWidgets = await window.widgetDiscovery.discoverWidgets();
-                    console.log(`📦 Discovered ${discoveredWidgets.length} widgets for library:`, discoveredWidgets);
-                    
-                    const canvas = document.querySelector('dashboard-canvas-entity');
-                    if (canvas && canvas.widgetManager) {
-                        // Charger tous les widgets découverts
-                        const loadResults = await window.widgetDiscovery.loadAllDiscoveredWidgets(canvas.widgetManager);
-                        console.log('✅ Basic widget loading completed:', loadResults);
-                        
-                        // Log des widgets chargés pour diagnostic
-                        const loadedWidgets = window.widgetDiscovery.getLoadedWidgets();
-                        console.log('� Successfully loaded widgets:', loadedWidgets);
-                        
-                        // Rafraîchir la bibliothèque de widgets pour afficher les nouveaux widgets
-                        const widgetLibrary = document.querySelector('widget-library');
-                        if (widgetLibrary && typeof widgetLibrary.refreshWidgets === 'function') {
-                            widgetLibrary.refreshWidgets();
-                            console.log('🔄 Widget library refreshed');
-                        }
-                        
-                        // Initialiser le canvas démo seulement si sélectionné explicitement
-                        // Ne plus initialiser automatiquement au démarrage
-                        console.log('✅ Widget library ready - demo canvas will be initialized only when selected');
-                        window.widgetsLoaded = true; // Marquer comme terminé
-                        window.widgetsCurrentlyLoading = false;
-                    } else {
-                        console.warn('⚠️ Canvas not ready, widgets will be loaded on-demand');
-                        window.widgetsCurrentlyLoading = false;
-                    }
-                } catch (error) {
-                    console.error('❌ Basic widget loading failed:', error);
-                    window.widgetsCurrentlyLoading = false; // Reset en cas d'erreur
-                }
-            }, 1000);
-            
-            // Store global references
-            window.dataModel = window.WidgetPlatform.getDataModel();
-            window.dataParser = new DataParser(); // Initialize DataParser instance
-            window.stateManager = window.WidgetPlatform.getStateManager();
-            window.dragDropManager = window.WidgetPlatform.getDragDropManager();
-            
-            // Header button handlers
-            document.getElementById('save-dashboard')?.addEventListener('click', () => {
-                console.log('💾 Saving dashboard...');
-                // Will be implemented in state-manager.js
-            });
-            
-            document.getElementById('load-dashboard')?.addEventListener('click', () => {
-                console.log('📂 Loading dashboard...');
-                // Will be implemented in state-manager.js
-            });
-            
-            document.getElementById('export-dashboard')?.addEventListener('click', () => {
-                console.log('📤 Exporting dashboard...');
-                // Will be implemented in state-manager.js
-            });
-            
-            document.getElementById('help-toggle')?.addEventListener('click', () => {
-                alert('📖 WIDGETS Platform MVP v1.0\\n\\n🔄 NEW: Dynamic Widget Discovery!\\n• The system now automatically discovers all widgets in the widgets/ folder\\n• Use "🧪 Test Discovery" to test the discovery system\\n• Console commands: testWidgetDiscovery(), quickTestWidgets(), showWidgetState()\\n\\n🔄 View/Info Toggle!\\n• Each widget has a toggle button to switch between View and Info modes\\n• View mode: See the actual widget rendering\\n• Info mode: See widget metadata and configuration\\n• Use "👁️ View All" / "ℹ️ Info All" to toggle all widgets at once\\n\\n📋 Basic Usage:\\n1. Load CSV data using the data source selector\\n2. Drag & drop fields to configure widgets\\n3. Build your dashboard!\\n4. Toggle between View and Info modes\\n\\nWebI-compatible workflow for easy adoption.');
-            });
-            
-            document.getElementById('test-widget-discovery')?.addEventListener('click', async () => {
-                console.log('🧪 Running widget discovery test...');
-                if (window.widgetTester) {
-                    const results = await window.widgetTester.runFullTest();
-                    if (results.success) {
-                        alert(`🧪 Widget Discovery Test Results:\\n\\n✅ Discovered: ${results.discovered} widgets\\n✅ Loaded: ${results.loaded} widgets\\n❌ Failed: ${results.failed} widgets\\n📈 Load Rate: ${results.stats.loadRate}\\n🏷️ Types: ${results.stats.types.join(', ')}\\n\\nCheck console for detailed information.`);
-                    } else {
-                        alert(`❌ Widget Discovery Test Failed:\\n\\n${results.error}\\n\\nCheck console for more details.`);
-                    }
-                } else {
-                    alert('❌ Widget Discovery Tester not available');
-                }
-            });
-            
+            // Clear widgets functionality
             document.getElementById('clear-widgets')?.addEventListener('click', () => {
-                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
-                if (dashboardCanvas && typeof dashboardCanvas.clearCanvas === 'function') {
-                    dashboardCanvas.clearCanvas();
+                if (confirm('Clear the current widget?')) {
+                    if (mainCanvas && mainCanvas.clearWidget) {
+                        mainCanvas.clearWidget();
+                        console.log('✅ Widget cleared');
+                    }
                 }
             });
             
+            // Export canvas functionality (simplified)
             document.getElementById('export-canvas')?.addEventListener('click', () => {
-                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
-                if (dashboardCanvas && typeof dashboardCanvas.exportCanvas === 'function') {
-                    dashboardCanvas.exportCanvas();
+                const currentWidget = mainCanvas?.getCurrentWidget?.();
+                if (currentWidget) {
+                    const config = {
+                        widget: currentWidget,
+                        timestamp: new Date().toISOString()
+                    };
+                    const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'widget-config.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    console.log('✅ Widget configuration exported');
+                } else {
+                    alert('No widget to export');
                 }
             });
 
-            // Widget View Toggle Controls
-            document.getElementById('toggle-all-view')?.addEventListener('click', () => {
-                console.log('👁️ Switching all widgets to View mode');
-                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
-                if (dashboardCanvas) {
-                    const toggles = dashboardCanvas.shadowRoot?.querySelectorAll('widget-view-toggle');
-                    if (toggles) {
-                        toggles.forEach(toggle => {
-                            if (!toggle.isViewMode) {
-                                toggle.enableViewMode();
-                            }
-                        });
-                        console.log(`✅ ${toggles.length} widgets switched to View mode`);
-                    }
-                }
-            });
-
-            document.getElementById('toggle-all-info')?.addEventListener('click', () => {
-                console.log('ℹ️ Switching all widgets to Info mode');
-                const dashboardCanvas = document.querySelector('dashboard-canvas-entity');
-                if (dashboardCanvas) {
-                    const toggles = dashboardCanvas.shadowRoot?.querySelectorAll('widget-view-toggle');
-                    if (toggles) {
-                        toggles.forEach(toggle => {
-                            if (toggle.isViewMode) {
-                                toggle.enableInfoMode();
-                            }
-                        });
-                        console.log(`✅ ${toggles.length} widgets switched to Info mode`);
-                    }
-                }
-            });
-            
-            document.getElementById('data-source-selector')?.addEventListener('change', async (e) => {
-                const filePath = e.target.value;
-                if (filePath) {
-                    console.log('🔄 Loading predefined dataset:', filePath);
-                    try {
-                        const response = await fetch(filePath);
-                        const csvContent = await response.text();
-                        console.log('📄 CSV content loaded, length:', csvContent.length);
-                        
-                        // Simuler un événement de fichier pour le parser existant
-                        const mockFile = new File([csvContent], filePath.split('/').pop(), { type: 'text/csv' });
-                        console.log('📁 Mock file created:', mockFile.name);
-                        
-                        // Déclencher le parsing via le système existant
-                        if (window.dataModel && window.dataParser) {
-                            console.log('🔧 DataModel and DataParser available');
-                            const parseResult = await window.dataParser.parseCSV(csvContent, mockFile.name);
-                            const fields = parseResult.fields; // parseCSV returns an object with fields property
-                            console.log('📊 Fields parsed:', fields.length, fields);
-                            
-                            const dataSourceInfo = {
-                                name: mockFile.name,
-                                fields: fields,
-                                recordCount: parseResult.dataSource.recordCount,
-                                size: csvContent.length,
-                                filePath: filePath,
-                                data: parseResult.data // Include the processed data
-                            };
-                            
-                            console.log('� DataSource info:', dataSourceInfo);
-                            
-                            window.dataModel.setActiveDataSource(dataSourceInfo);
-                            console.log('✅ Data source set in model');
-                            
-                            // Notifier tous les composants avec un délai pour être sûr
-                            setTimeout(() => {
-                                console.log('📚 Updating components...');
-                                console.log('🔍 Searching for components in DOM...');
-                                
-                                const availableObjects = document.querySelector('available-objects-panel');
-                                const feedingPanel = document.querySelector('feeding-panel');
-                                
-                                console.log('🔍 Components found:', {
-                                    availableObjects: !!availableObjects,
-                                    feedingPanel: !!feedingPanel,
-                                    availableObjectsHasUpdateFields: availableObjects && typeof availableObjects.updateFields === 'function',
-                                    feedingPanelHasUpdateFields: feedingPanel && typeof feedingPanel.updateFields === 'function'
-                                });
-                                
-                                if (availableObjects) {
-                                    console.log('📚 Available Objects Panel found, updating...');
-                                    availableObjects.updateFields(fields);
-                                    availableObjects.updateDataSource(window.dataModel.getActiveDataSource());
-                                    console.log('📚 Available Objects Panel updated');
-                                } else {
-                                    console.error('❌ Available Objects Panel not found');
-                                }
-                                
-                                if (feedingPanel) {
-                                    console.log('⚙️ Feeding Panel found, updating...');
-                                    if (typeof feedingPanel.updateFields === 'function') {
-                                        feedingPanel.updateFields(fields);
-                                        console.log('⚙️ Feeding Panel updated');
-                                    } else {
-                                        console.error('❌ Feeding Panel updateFields method not available');
-                                    }
-                                } else {
-                                    console.warn('⚠️ Feeding Panel not found');
-                                }
-                            }, 100);
-                        } else {
-                            console.error('❌ DataModel or DataParser not available:', {
-                                dataModel: !!window.dataModel,
-                                dataParser: !!window.dataParser
-                            });
+            // Global toggle logic
+            const globalToggle = document.getElementById('global-toggle');
+            if (globalToggle) {
+                globalToggle.addEventListener('widget-view-toggle', (e) => {
+                    console.log('🔄 Global Toggle:', e.detail.mode);
+                    
+                    // Get current widget from canvas
+                    const canvas = document.getElementById('main-canvas');
+                    const currentWidget = canvas?.getCurrentWidget?.();
+                    
+                    if (currentWidget && window.dualModeRenderer) {
+                        // Apply mode to current widget
+                        window.dualModeRenderer.setViewMode(currentWidget.id, e.detail.isViewMode);
+                        // Re-render the widget content
+                        const renderArea = canvas.shadowRoot?.querySelector(`#widget-content-${currentWidget.id}`);
+                        if (renderArea) {
+                            window.dualModeRenderer.renderWidgetContent(currentWidget, renderArea);
                         }
-                    } catch (error) {
-                        console.error('❌ Error loading dataset:', error);
-                        alert('Error loading dataset: ' + error.message);
+                        console.log('✅ Global toggle applied to widget:', currentWidget.id);
+                    } else {
+                        console.log('ℹ️ No widget to toggle');
                     }
-                } else {
-                    console.log('🗑️ No dataset selected, clearing data');
-                    // Clear the data when no selection
-                    const availableObjects = document.querySelector('available-objects-panel');
-                    if (availableObjects) {
-                        availableObjects.updateFields([]);
-                        availableObjects.updateDataSource(null);
-                    }
-                }
-            });
+                });
+            }
             
-            document.getElementById('csv-file-input')?.addEventListener('change', async (event) => {
-        // Feeding auto demo logic: handler toujours actif
-        // Handler Feeding auto demo : attachement garanti après DOMContentLoaded
-
-        // Handler Feeding auto demo : attachement robuste avec MutationObserver
-
-        // Event delegation : écouteur sur le parent du bouton
-        document.body.addEventListener('click', async function(e) {
-            const btn = e.target.closest('#feeding-demo-btn');
-            if (!btn) return;
-            e.preventDefault();
-            console.log('[FeedingDemo] CLICK détecté sur le bouton Feeding auto demo (event delegation)');
-            const demoCanvasEl = document.getElementById('demo-canvas');
-            const dataSourceSelector = document.getElementById('data-source-selector');
-            let datasetUrl = '';
-            if (dataSourceSelector && dataSourceSelector.options.length > 1) {
-                datasetUrl = dataSourceSelector.options[dataSourceSelector.selectedIndex].value;
-            } else {
-                datasetUrl = 'samples/marketing-data.csv';
-            }
-            let sampleData = [];
-            try {
-                const response = await fetch(datasetUrl);
-                const csvText = await response.text();
-                const lines = csvText.trim().split('\n');
-                const headers = lines[0].split(',');
-                sampleData = lines.slice(1).map(line => {
-                    const values = line.split(',');
-                    const obj = {};
-                    headers.forEach((h, i) => { obj[h] = values[i]; });
-                    return obj;
-                });
-            } catch (err) {
-                console.warn('[FeedingDemo] Impossible de charger les données du dataset:', err);
-            }
-            // Feeding auto pour tous les widgets du canvas démo
-            if (demoCanvasEl && demoCanvasEl.shadowRoot) {
-                const widgetTags = [
-                    'bar-chart-widget-unified',
-                    'line-chart-widget-unified',
-                    'pie-chart-widget-unified',
-                    'table-widget-unified'
-                ];
-                widgetTags.forEach(tag => {
-                    const widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
-                    if (!widgetEl) {
-                        console.warn(`[FeedingDemo] Widget <${tag}.demo-widget> introuvable dans le shadowRoot du canvas démo.`);
-                        return;
-                    }
-                    console.log(`[FeedingDemo] Widget ciblé: <${tag}.demo-widget>`, widgetEl);
-                    if (typeof widgetEl.updateData === 'function') {
-                        console.log(`[FeedingDemo] Appel updateData sur <${tag}> avec`, sampleData.slice(0,2));
-                        widgetEl.updateData(sampleData);
-                    } else if (typeof widgetEl.initializeWithEntity === 'function') {
-                        console.log(`[FeedingDemo] Appel initializeWithEntity sur <${tag}> avec`, sampleData.slice(0,2));
-                        widgetEl.initializeWithEntity({ configuration: { sampleData } });
-                    } else {
-                        console.warn(`[FeedingDemo] Widget <${tag}> ne possède ni updateData ni initializeWithEntity.`);
-                    }
-                });
-            }
-        });
-
-        // Ajout : feeding auto sur changement de dataset (inchangé)
-        setTimeout(() => {
-            const dataSourceSelector = document.getElementById('data-source-selector');
-            if (dataSourceSelector) {
-                dataSourceSelector.addEventListener('change', async () => {
-                    const demoCanvasEl = document.getElementById('demo-canvas');
-                    let datasetUrl = '';
-                    if (dataSourceSelector && dataSourceSelector.options.length > 1) {
-                        datasetUrl = dataSourceSelector.options[dataSourceSelector.selectedIndex].value;
-                    } else {
-                        datasetUrl = 'samples/marketing-data.csv';
-                    }
-                    let sampleData = [];
-                    try {
-                        const response = await fetch(datasetUrl);
-                        const csvText = await response.text();
-                        const lines = csvText.trim().split('\n');
-                        const headers = lines[0].split(',');
-                        sampleData = lines.slice(1).map(line => {
-                            const values = line.split(',');
-                            const obj = {};
-                            headers.forEach((h, i) => { obj[h] = values[i]; });
-                            return obj;
-                        });
-                    } catch (err) {
-                        console.warn('[FeedingDemo] Impossible de charger les données du dataset:', err);
-                    }
-                    // Feeding auto pour tous les widgets du canvas démo
-                    if (demoCanvasEl && demoCanvasEl.shadowRoot) {
-                        const widgetTags = [
-                            'bar-chart-widget-unified',
-                            'line-chart-widget-unified',
-                            'pie-chart-widget-unified',
-                            'table-widget-unified'
-                        ];
-                        widgetTags.forEach(tag => {
-                            const widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
-                            if (widgetEl && typeof widgetEl.updateData === 'function') {
-                                widgetEl.updateData(sampleData);
-                                console.log(`[FeedingDemo] updateData appelé sur <${tag}>`, sampleData);
-                            } else if (widgetEl && typeof widgetEl.initializeWithEntity === 'function') {
-                                widgetEl.initializeWithEntity({ configuration: { sampleData } });
-                                console.log(`[FeedingDemo] initializeWithEntity appelé sur <${tag}>`, sampleData);
-                            } else {
-                                console.warn(`[FeedingDemo] Widget <${tag}> non initialisé (méthode manquante)`);
-                            }
-                        });
-                    }
-                });
-            }
-        }, 0);
-                const file = event.target.files[0];
-                if (file && file.name.toLowerCase().endsWith('.csv')) {
-                    try {
-                        console.log('📊 Loading CSV file:', file.name);
-                        await window.WidgetPlatform.loadCSVFile(file);
-                        console.log('✅ CSV file loaded successfully');
-                    } catch (error) {
-                        console.error('❌ Error loading CSV:', error);
-                        alert('Error loading CSV file: ' + error.message);
-                    }
-                } else {
-                    alert('Please select a valid CSV file.');
-                }
-            });
-        });
-        
-        // Global error handler
-        window.addEventListener('error', (event) => {
-            console.error('🚨 Application Error:', event.error);
-        });
-        
-        // Performance monitoring
-        window.addEventListener('load', () => {
-            const loadTime = performance.now();
-            console.log(`⚡ App loaded in ${Math.round(loadTime)}ms`);
+            console.log('✅ Widget Platform - Ultra-Simplified Architecture Loaded Successfully!');
         });
     </script>
-        <!-- Feeding auto demo event delegation : installation globale -->
-        <script>
-        console.log('[FeedingDemo] Installation globale de l\'event delegation pour le bouton Feeding auto demo');
-        document.body.addEventListener('click', async function(e) {
-                    const btn = e.target.closest('#feeding-demo-btn');
-                    if (!btn) return;
-                    e.preventDefault();
-                    console.log('[FeedingDemo] CLICK détecté sur le bouton Feeding auto demo (event delegation GLOBAL)');
-                    const demoCanvasEl = document.getElementById('demo-canvas');
-                    const dataSourceSelector = document.getElementById('data-source-selector');
-                    let datasetUrl = '';
-                    if (dataSourceSelector && dataSourceSelector.options.length > 1) {
-                        datasetUrl = dataSourceSelector.options[dataSourceSelector.selectedIndex].value;
-                    } else {
-                        datasetUrl = 'samples/marketing-data.csv';
-                    }
-                    let sampleData = [];
-                                                    let widgetData = {
-                                                        'bar-chart-widget-unified': [],
-                                                        'line-chart-widget-unified': [],
-                                                        'pie-chart-widget-unified': [],
-                                                        'table-widget-unified': []
-                                                    };
-                                                    try {
-                                                        const response = await fetch(datasetUrl);
-                                                        const csvText = await response.text();
-                                                        const lines = csvText.trim().split('\n');
-                                                        const headers = lines[0].split(',');
-                                                        // Construction d'un sampleData générique (pour table)
-                                                        sampleData = lines.slice(1).map(line => {
-                                                            const values = line.split(',');
-                                                            const obj = {};
-                                                            headers.forEach((h, i) => {
-                                                                obj[h] = values[i];
-                                                            });
-                                                            return obj;
-                                                        });
-                                                        widgetData['table-widget-unified'] = sampleData;
-                                                                                                                // Mapping générique via autoWidgetFeeder
-                                                                                                                import('./src/services/autoWidgetFeeder.js').then(({ autoMapDataToWidgetSchema }) => {
-                                                                                                                    const widgetSchemas = {
-                                                                                                                        'bar-chart-widget-unified': window.bar_chart_WIDGET_DEFINITION?.metadataSchema,
-                                                                                                                        'line-chart-widget-unified': window.line_chart_WIDGET_DEFINITION?.metadataSchema,
-                                                                                                                        'pie-chart-widget-unified': window.pie_chart_WIDGET_DEFINITION?.metadataSchema
-                                                                                                                    };
-                                                                                                                    Object.entries(widgetSchemas).forEach(([tag, schema]) => {
-                                                                                                                        if (!schema) return;
-                                                                                                                        widgetData[tag] = autoMapDataToWidgetSchema(sampleData, schema);
-                                                                                                                    });
-                                                                                                                    // Feeding auto pour tous les widgets du canvas démo (inchangé)
-                                                                                                                    if (demoCanvasEl && demoCanvasEl.shadowRoot) {
-                                                                                                                        const widgetTags = [
-                                                                                                                            'bar-chart-widget-unified',
-                                                                                                                            'line-chart-widget-unified',
-                                                                                                                            'pie-chart-widget-unified',
-                                                                                                                            'table-widget-unified'
-                                                                                                                        ];
-                                                                                                                        widgetTags.forEach(tag => {
-                                                                                                                            let widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
-                                                                                                                            if (!widgetEl) {
-                                                                                                                                widgetEl = demoCanvasEl.shadowRoot.querySelector(tag);
-                                                                                                                            }
-                                                                                                                            if (!widgetEl) {
-                                                                                                                                console.warn(`[FeedingDemo] Widget <${tag}> introuvable dans le shadowRoot du canvas démo.`);
-                                                                                                                                return;
-                                                                                                                            }
-                                                                                                                            const dataToFeed = widgetData[tag] && widgetData[tag].length ? widgetData[tag] : sampleData;
-                                                                                                                            console.log(`[FeedingDemo][DATA] Données injectées dans <${tag}> :`, JSON.stringify(dataToFeed));
-                                                                                                                            console.log(`[FeedingDemo] Widget ciblé: <${tag}>`, widgetEl);
-                                                                                                                            if (typeof widgetEl.updateData === 'function') {
-                                                                                                                                console.log(`[FeedingDemo] Appel updateData sur <${tag}> avec`, dataToFeed.slice(0,2));
-                                                                                                                                widgetEl.updateData(dataToFeed);
-                                                                                                                            } else if (typeof widgetEl.initializeWithEntity === 'function') {
-                                                                                                                                console.log(`[FeedingDemo] Appel initializeWithEntity sur <${tag}> avec`, dataToFeed.slice(0,2));
-                                                                                                                                widgetEl.initializeWithEntity({ configuration: { sampleData: dataToFeed } });
-                                                                                                                            } else {
-                                                                                                                                console.warn(`[FeedingDemo] Widget <${tag}> ne possède ni updateData ni initializeWithEntity.`);
-                                                                                                                            }
-                                                                                                                        });
-                                                                                                                    }
-                                                                                                                });
-                                                    } catch (err) {
-                                                        console.warn('[FeedingDemo] Impossible de charger les données du dataset:', err);
-                                                    }
-                    // Feeding auto pour tous les widgets du canvas démo
-                    if (demoCanvasEl && demoCanvasEl.shadowRoot) {
-                        const widgetTags = [
-                            'bar-chart-widget-unified',
-                            'line-chart-widget-unified',
-                            'pie-chart-widget-unified',
-                            'table-widget-unified'
-                        ];
-                        widgetTags.forEach(tag => {
-                            let widgetEl = demoCanvasEl.shadowRoot.querySelector(`${tag}.demo-widget`);
-                            if (!widgetEl) {
-                                // Fallback : chercher par tag seul
-                                widgetEl = demoCanvasEl.shadowRoot.querySelector(tag);
-                            }
-                            if (!widgetEl) {
-                                console.warn(`[FeedingDemo] Widget <${tag}> introuvable dans le shadowRoot du canvas démo.`);
-                                return;
-                            }
-                            // Sélectionner le jeu de données adapté
-                            const dataToFeed = widgetData[tag] && widgetData[tag].length ? widgetData[tag] : sampleData;
-                            console.log(`[FeedingDemo][DATA] Données injectées dans <${tag}> :`, JSON.stringify(dataToFeed));
-                            console.log(`[FeedingDemo] Widget ciblé: <${tag}>`, widgetEl);
-                            if (typeof widgetEl.updateData === 'function') {
-                                console.log(`[FeedingDemo] Appel updateData sur <${tag}> avec`, dataToFeed.slice(0,2));
-                                widgetEl.updateData(dataToFeed);
-                            } else if (typeof widgetEl.initializeWithEntity === 'function') {
-                                console.log(`[FeedingDemo] Appel initializeWithEntity sur <${tag}> avec`, dataToFeed.slice(0,2));
-                                widgetEl.initializeWithEntity({ configuration: { sampleData: dataToFeed } });
-                            } else {
-                                console.warn(`[FeedingDemo] Widget <${tag}> ne possède ni updateData ni initializeWithEntity.`);
-                            }
-                        });
-                    }
-        });
-        // Log global d'erreur JS
-        window.addEventListener('error', function(e) {
-            console.error('[FeedingDemo][GLOBAL ERROR]', e.message, e.error);
-        });
-        </script>
 </body>
 </html>

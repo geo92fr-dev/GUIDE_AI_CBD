@@ -1,5 +1,5 @@
-/**
- * 🎨 Dashboard Canvas - Central Display Area (Entity-based)
+﻿/**
+ * ?? Dashboard Canvas - Central Display Area (Entity-based)
  * 
  * Canvas component for widget display and management according to WIDGET_TECH_SPEC.md:
  * - Widget rendering and layout using WidgetEntity system
@@ -36,15 +36,17 @@ class DashboardCanvasEntity extends HTMLElement {
      * Initialize WidgetEntity management systems
      */
     async initializeEntitySystems() {
-        console.log('🏗️ Canvas: Initializing Entity systems');
+        console.log('📁 Canvas: Initializing Entity systems');
         
         try {
             // Initialize WidgetManager
             if (typeof WidgetManager !== 'undefined') {
                 this.widgetManager = new WidgetManager();
-                console.log('✅ Canvas: WidgetManager initialized');
+                // Expose globally for other components (feeding panel, etc.)
+                window.widgetManager = this.widgetManager;
+                console.log('✅ Canvas: WidgetManager initialized and exposed globally');
             } else {
-                console.warn('⚠️ Canvas: WidgetManager not available, falling back to simple mode');
+                console.warn(' ¸ Canvas: WidgetManager not available, falling back to simple mode');
             }
             
             // Initialize EntityRenderer
@@ -52,22 +54,22 @@ class DashboardCanvasEntity extends HTMLElement {
                 this.entityRenderer = new EntityRenderer();
                 console.log('✅ Canvas: EntityRenderer initialized');
             } else {
-                console.warn('⚠️ Canvas: EntityRenderer not available, falling back to simple mode');
+                console.warn(' ¸ Canvas: EntityRenderer not available, falling back to simple mode');
             }
             
             // Initialize DualModeRenderer
             if (typeof WidgetDualModeRenderer !== 'undefined') {
                 this.dualModeRenderer = new WidgetDualModeRenderer();
-                console.log('✅ Canvas: DualModeRenderer initialized');
+                console.log('… Canvas: DualModeRenderer initialized');
             } else {
-                console.warn('⚠️ Canvas: DualModeRenderer not available');
+                console.warn(' ¸ Canvas: DualModeRenderer not available');
             }
             
             // Load existing entities
             await this.loadExistingEntities();
             
         } catch (error) {
-            console.error('❌ Canvas: Entity systems initialization failed:', error);
+            console.error('âŒ Canvas: Entity systems initialization failed:', error);
             // Continue with fallback mode
         }
     }
@@ -79,17 +81,17 @@ class DashboardCanvasEntity extends HTMLElement {
         if (!this.widgetManager) return;
         
         try {
-            console.log('📁 Canvas: Loading existing entities');
+            console.log('“ Canvas: Loading existing entities');
             this.entities = await this.widgetManager.getAllWidgets();
-            console.log('✅ Canvas: Loaded', this.entities.length, 'entities');
+            console.log('… Canvas: Loaded', this.entities.length, 'entities');
         } catch (error) {
-            console.error('❌ Canvas: Failed to load entities:', error);
+            console.error('âŒ Canvas: Failed to load entities:', error);
             this.entities = [];
         }
     }
 
     render() {
-        console.log('🎨 Canvas: render() called - Entity count:', this.entities.length);
+        console.log('?? Canvas: render() called - Entity count:', this.entities.length);
         
         const style = `
             <style>
@@ -136,10 +138,11 @@ class DashboardCanvasEntity extends HTMLElement {
                 }
                 
                 .widgets-grid {
-                    display: grid;
-                    grid-template-columns: repeat(${this.gridColumns}, 1fr);
-                    gap: ${this.gridGap}px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
                     min-height: 100%;
+                    padding: 16px;
                 }
                 
                 .widget-container, .entity-container {
@@ -152,7 +155,9 @@ class DashboardCanvasEntity extends HTMLElement {
                     overflow: hidden;
                     transition: all var(--transition-fast, 0.15s ease);
                     position: relative;
-                    min-height: 300px;
+                    width: 90%;
+                    height: 90%;
+                    min-height: 500px;
                     color: var(--text-primary, #EAECEE);
                 }
                 
@@ -587,7 +592,7 @@ class DashboardCanvasEntity extends HTMLElement {
      */
     async renderNewEntityAsync(entity) {
         if (!this.dualModeRenderer) {
-            console.warn('⚠️ Canvas: DualModeRenderer not available for new entity');
+            console.warn(' ¸ Canvas: DualModeRenderer not available for new entity');
             return;
         }
 
@@ -600,7 +605,7 @@ class DashboardCanvasEntity extends HTMLElement {
                 await this.dualModeRenderer.renderWidget(entity, container);
             }
         } catch (error) {
-            console.error(`❌ Canvas: Failed to render new entity ${entity.id}:`, error);
+            console.error(`âŒ Canvas: Failed to render new entity ${entity.id}:`, error);
         }
     }
 
@@ -622,7 +627,7 @@ class DashboardCanvasEntity extends HTMLElement {
         return `
             <div class="canvas-content">
                 <div class="empty-canvas">
-                    <div class="empty-icon">🎨</div>
+                    <div class="empty-icon">📊</div>
                     <div class="empty-title">Start Building Your Dashboard</div>
                     <div class="empty-description">
                         Follow these steps to create data visualizations:
@@ -634,24 +639,24 @@ class DashboardCanvasEntity extends HTMLElement {
                         </div>
                         <div class="empty-step">
                             <span class="step-number">2</span>
-                            <span>🧩 Drag a widget from Widget Library to this canvas</span>
+                            <span>🖱️ Drag a widget from Widget Library to this canvas</span>
                         </div>
                         <div class="empty-step">
                             <span class="step-number">3</span>
-                            <span>📊 Drag fields to Data Assignment panel</span>
+                            <span>                            <span>📊 Drag fields to Data Assignment panel</span></span>
                         </div>
                         <div class="empty-step">
                             <span class="step-number">4</span>
-                            <span>✨ Create your widget</span>
+                            <span>🎨 Create your widget</span>
                         </div>
                     </div>
                     <div class="drop-hint">
-                        <div class="drop-hint-icon">🧩</div>
+                        <div class="drop-hint-icon">🖱️</div>
                         <div>Drag widgets here to add them to your dashboard</div>
                     </div>
                     <div style="margin-top: 20px;">
                         <button id="clear-canvas-btn" style="padding: 8px 16px; background: var(--red-5, #ff4757); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            🗑️ Clear Canvas (Debug)
+                                                        🗑️ Clear Canvas (Debug)
                         </button>
                         <span style="margin-left: 10px; color: var(--grey-3); font-size: 0.9em;">
                             Current entities: ${this.entities.length}
@@ -666,12 +671,10 @@ class DashboardCanvasEntity extends HTMLElement {
      * Render entity container using WidgetEntity layout properties
      */
     renderEntityContainer(entity, index) {
-        const gridSpan = entity.layout.size.width || 4; // Default to 4 columns
-        const gridRowSpan = entity.layout.size.height || 1; // Default to 1 row
+        // No grid positioning - full space
         
         return `
             <div class="entity-container" 
-                 style="grid-column: span ${gridSpan}; grid-row: span ${gridRowSpan};"
                  data-entity-id="${entity.id}"
                  data-widget-id="${entity.id}"
                  data-entity-type="${entity.type}"
@@ -688,16 +691,16 @@ class DashboardCanvasEntity extends HTMLElement {
                         <widget-view-toggle 
                             widget-id="${entity.id}" 
                             class="widget-view-toggle"
-                            view-mode="false">
+                            view-mode="true">
                         </widget-view-toggle>
                         <button class="btn-widget edit-btn" data-action="edit" data-entity-id="${entity.id}" title="Edit widget">
-                            ⚙️
+                            ™¸
                         </button>
-                        <button class="btn-widget duplicate-btn" data-action="duplicate" data-entity-id="${entity.id}" title="Duplicate widget">
-                            📋
+                        <button class="btn-widget refresh-btn" data-action="refresh" data-entity-id="${entity.id}" title="Refresh widget">
+                            ?
                         </button>
                         <button class="btn-widget danger remove-btn" data-action="remove" data-entity-id="${entity.id}" title="Remove widget">
-                            🗑️
+                            —‘¸
                         </button>
                     </div>
                 </div>
@@ -756,7 +759,7 @@ class DashboardCanvasEntity extends HTMLElement {
      */
     async renderEntitiesAsync() {
         if (!this.dualModeRenderer) {
-            console.warn('⚠️ Canvas: DualModeRenderer not available, skipping async render');
+            console.warn(' ¸ Canvas: DualModeRenderer not available, skipping async render');
             return;
         }
 
@@ -767,7 +770,7 @@ class DashboardCanvasEntity extends HTMLElement {
                     await this.dualModeRenderer.renderWidget(entity, container);
                 }
             } catch (error) {
-                console.error(`❌ Canvas: Failed to render entity ${entity.id}:`, error);
+                console.error(`âŒ Canvas: Failed to render entity ${entity.id}:`, error);
             }
         }
     }
@@ -785,10 +788,10 @@ class DashboardCanvasEntity extends HTMLElement {
         
         return `
             <div style="font-size: 0.8em; margin-top: 8px; color: var(--business-green, #28a745);">
-                ✅ Data Connected
+                … Data Connected
             </div>
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.8;">
-                📊 ${dimensionsCount} dimensions • 📈 ${measuresCount} measures • 🔍 ${filtersCount} filters
+                “Š ${dimensionsCount} dimensions â€¢ “ˆ ${measuresCount} measures â€¢ ” ${filtersCount} filters
             </div>
             <div style="font-size: 0.7em; margin-top: 4px; opacity: 0.6;">
                 Last updated: ${timeString}
@@ -810,7 +813,7 @@ class DashboardCanvasEntity extends HTMLElement {
     renderLoadingState() {
         return `
             <div class="entity-loading">
-                <div class="loading-icon">⏳</div>
+                <div class="loading-icon">â³</div>
                 <div>Loading entity...</div>
             </div>
         `;
@@ -819,7 +822,7 @@ class DashboardCanvasEntity extends HTMLElement {
     renderErrorState(error) {
         return `
             <div style="color: var(--business-red); text-align: center;">
-                <div style="font-size: 2em; margin-bottom: 8px;">⚠️</div>
+                <div style="font-size: 2em; margin-bottom: 8px;"> ¸</div>
                 <div>Error: ${error}</div>
             </div>
         `;
@@ -827,19 +830,19 @@ class DashboardCanvasEntity extends HTMLElement {
 
     getWidgetIcon(type) {
         const icons = {
-            'bar-chart': '📊',
-            'line-chart': '📈',
-            'pie-chart': '🥧',
-            'table': '📋'
+            'bar-chart': '“Š',
+            'line-chart': '“ˆ',
+            'pie-chart': '¥§',
+            'table': '“‹'
         };
-        return icons[type] || '📊';
+        return icons[type] || '“Š';
     }
 
     bindEvents() {
-        console.log('🔗 Canvas: Binding events - eventsInitialized:', this.eventsInitialized);
+        console.log('”— Canvas: Binding events - eventsInitialized:', this.eventsInitialized);
         
         if (this.eventsInitialized) {
-            console.log('⏭️ Canvas: Events already initialized, skipping');
+            console.log('â­¸ Canvas: Events already initialized, skipping');
             return;
         }
 
@@ -874,6 +877,13 @@ class DashboardCanvasEntity extends HTMLElement {
             this.handleViewToggle(widgetId, isViewMode, mode);
         });
 
+        // Widget data assignment events - listen for data updates
+        window.addEventListener('widgetDataAssigned', (e) => {
+            const { widgetId } = e.detail;
+            console.log('📡 Canvas: Received widget data assignment event for:', widgetId);
+            this.refreshWidget(widgetId);
+        });
+
         // Mark events as initialized
         this.eventsInitialized = true;
         console.log('✅ Canvas: Events bound successfully');
@@ -883,11 +893,11 @@ class DashboardCanvasEntity extends HTMLElement {
      * Handle entity actions (edit, duplicate, remove)
      */
     handleEntityAction(action, entityId) {
-        console.log(`🎨 Canvas: ${action} button clicked for entity ${entityId}`);
+        console.log(`?? Canvas: ${action} button clicked for entity ${entityId}`);
         
         const entity = this.entities.find(e => e.id === entityId);
         if (!entity) {
-            console.error('❌ Canvas: Entity not found:', entityId);
+            console.error('âŒ Canvas: Entity not found:', entityId);
             return;
         }
 
@@ -895,14 +905,60 @@ class DashboardCanvasEntity extends HTMLElement {
             case 'edit':
                 this.editEntity(entity);
                 break;
-            case 'duplicate':
-                this.duplicateEntity(entity);
+            case 'refresh':
+                this.refreshEntity(entity);
                 break;
             case 'remove':
                 this.removeEntity(entityId);
                 break;
             default:
-                console.warn('⚠️ Canvas: Unknown action:', action);
+                console.warn(' ¸ Canvas: Unknown action:', action);
+        }
+    }
+
+    /**
+     * Refresh a specific widget after data assignment
+     */
+    refreshWidget(widgetId) {
+        console.log('🔄 Canvas: Refreshing widget:', widgetId);
+        
+        const entity = this.entities.find(e => e.id === widgetId);
+        if (!entity) {
+            console.warn('⚠️ Canvas: Widget entity not found for refresh:', widgetId);
+            return;
+        }
+
+        try {
+            console.log('📊 Canvas: Entity dataBinding before refresh:', entity.dataBinding);
+            
+            // Find the widget container
+            const widgetContainer = this.shadowRoot.querySelector(`[data-widget-id="${widgetId}"]`);
+            if (!widgetContainer) {
+                console.warn('⚠️ Canvas: Widget container not found:', widgetId);
+                return;
+            }
+
+            // Force re-render the widget container
+            console.log('🎨 Canvas: Force re-rendering widget:', widgetId);
+            
+            // Re-render the entire container to update the widget
+            const entityIndex = this.entities.findIndex(e => e.id === widgetId);
+            if (entityIndex !== -1) {
+                const entityContainer = this.shadowRoot.querySelector(`[data-widget-id="${widgetId}"]`);
+                if (entityContainer) {
+                    entityContainer.outerHTML = this.renderEntityContainer(entity, entityIndex);
+                    console.log('✅ Canvas: Widget container re-rendered');
+                } else {
+                    console.warn('⚠️ Canvas: Widget container not found for re-rendering');
+                }
+            } else {
+                console.warn('⚠️ Canvas: Entity not found in entities array');
+            }
+            
+            console.log('✅ Canvas: Widget refreshed successfully');
+            
+        } catch (error) {
+            console.error('❌ Canvas: Failed to refresh widget:', error);
         }
     }
 
@@ -910,10 +966,10 @@ class DashboardCanvasEntity extends HTMLElement {
      * Handle view mode toggle for widgets
      */
     async handleViewToggle(widgetId, isViewMode, mode) {
-        console.log(`🔄 Canvas: View toggle for widget ${widgetId} → ${mode.toUpperCase()}`);
+        console.log(`”„ Canvas: View toggle for widget ${widgetId} â†’ ${mode.toUpperCase()}`);
         
         if (!this.dualModeRenderer) {
-            console.warn('⚠️ Canvas: DualModeRenderer not available');
+            console.warn(' ¸ Canvas: DualModeRenderer not available');
             return;
         }
 
@@ -924,18 +980,21 @@ class DashboardCanvasEntity extends HTMLElement {
             // Find the entity
             const entity = this.entities.find(e => e.id === widgetId);
             if (!entity) {
-                console.error('❌ Canvas: Entity not found for toggle:', widgetId);
+                console.error('âŒ Canvas: Entity not found for toggle:', widgetId);
                 return;
             }
 
             // Re-render the widget content
             const container = this.shadowRoot.querySelector(`#entity-content-${widgetId}`);
             if (container) {
+                // Save current content in case of failure
+                const originalContent = container.innerHTML;
+                
                 // Show loading state during re-render
                 container.innerHTML = `
                     <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary, #A9B4BE);">
                         <div style="text-align: center;">
-                            <div style="font-size: 1.5em; margin-bottom: 8px;">🔄</div>
+                            <div style="font-size: 1.5em; margin-bottom: 8px;">”„</div>
                             <div>Switching to ${mode} mode...</div>
                         </div>
                     </div>
@@ -943,7 +1002,21 @@ class DashboardCanvasEntity extends HTMLElement {
 
                 // Slight delay for smooth transition
                 setTimeout(async () => {
-                    await this.dualModeRenderer.renderWidget(entity, container);
+                    try {
+                        await this.dualModeRenderer.renderWidget(entity, container);
+                    } catch (error) {
+                        console.error('❌ Canvas: Failed to render widget in new mode, reverting:', error);
+                        // Revert to original content if rendering fails
+                        container.innerHTML = originalContent;
+                        // Also revert the toggle state
+                        this.dualModeRenderer.setViewMode(widgetId, !isViewMode);
+                        
+                        // Update the toggle button state
+                        const toggleButton = this.shadowRoot.querySelector(`widget-view-toggle[widget-id="${widgetId}"]`);
+                        if (toggleButton) {
+                            toggleButton.isViewMode = !isViewMode;
+                        }
+                    }
                 }, 200);
             }
 
@@ -955,7 +1028,7 @@ class DashboardCanvasEntity extends HTMLElement {
             }));
 
         } catch (error) {
-            console.error('❌ Canvas: View toggle failed:', error);
+            console.error('âŒ Canvas: View toggle failed:', error);
         }
     }
 
@@ -963,7 +1036,7 @@ class DashboardCanvasEntity extends HTMLElement {
      * Add new entity to canvas
      */
     async addEntity(entityConfig) {
-        console.log('📦 Canvas: Adding new entity:', entityConfig);
+        console.log('“¦ Canvas: Adding new entity:', entityConfig);
         
         try {
             let entity;
@@ -976,8 +1049,18 @@ class DashboardCanvasEntity extends HTMLElement {
                 entity = this.createSimpleEntity(entityConfig);
             }
 
-            // Add to entities array
-            this.entities.push(entity);
+            // SIMPLE MODE: Replace all existing entities with the new one
+            this.entities = [entity]; // Clear and replace with single entity
+            
+            // Force full-canvas size for the widget
+            entity.layout = {
+                x: 0,
+                y: 0,
+                width: 12,  // Full width of grid
+                height: 8   // Full height
+            };
+            
+            console.log('📐 Canvas: Widget will take full canvas space:', entity.layout);
             
             // Re-render (without triggering async render to avoid recursion)
             this.renderSyncOnly();
@@ -994,11 +1077,11 @@ class DashboardCanvasEntity extends HTMLElement {
                 bubbles: true
             }));
             
-            console.log('✅ Canvas: Entity added successfully:', entity.id);
+            console.log('… Canvas: Entity added successfully:', entity.id);
             return entity;
             
         } catch (error) {
-            console.error('❌ Canvas: Failed to add entity:', error);
+            console.error('âŒ Canvas: Failed to add entity:', error);
             throw error;
         }
     }
@@ -1035,7 +1118,7 @@ class DashboardCanvasEntity extends HTMLElement {
             },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            // Méthodes utilitaires pour compatibilité
+            // MÃ©thodes utilitaires pour compatibilitÃ©
             validate: () => ({ isValid: true, errors: [] }),
             getSummary: function() {
                 return {
@@ -1052,7 +1135,7 @@ class DashboardCanvasEntity extends HTMLElement {
      * Remove entity from canvas
      */
     async removeEntity(entityId) {
-        console.log('🗑️ Canvas: Removing entity:', entityId);
+        console.log('—‘¸ Canvas: Removing entity:', entityId);
         
         try {
             if (this.widgetManager) {
@@ -1079,53 +1162,82 @@ class DashboardCanvasEntity extends HTMLElement {
                 bubbles: true
             }));
             
-            console.log('✅ Canvas: Entity removed successfully');
+            console.log('… Canvas: Entity removed successfully');
             
         } catch (error) {
-            console.error('❌ Canvas: Failed to remove entity:', error);
+            console.error('âŒ Canvas: Failed to remove entity:', error);
         }
     }
 
     /**
-     * Duplicate entity
+    /**
+     * Refresh entity by reloading its widget definition
      */
-    async duplicateEntity(originalEntity) {
-        console.log('📋 Canvas: Duplicating entity:', originalEntity.id);
+    async refreshEntity(entity) {
+        console.log('”„ Canvas: Refreshing entity:', entity.id);
         
         try {
-            let duplicatedEntity;
+            // Set loading state
+            entity.state = entity.state || {};
+            entity.state.loading = true;
             
-            if (this.widgetManager) {
-                // Use WidgetManager to clone entity
-                duplicatedEntity = await this.widgetManager.clone(originalEntity.id);
-            } else {
-                // Fallback: simple clone
-                duplicatedEntity = {
-                    ...originalEntity,
-                    id: `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    title: `${originalEntity.title} (Copy)`
-                };
+            // Re-render to show loading state
+            this.render();
+            
+            // If widget has a type, try to reload it from the widget discovery service
+            if (entity.type && window.widgetDiscoveryService) {
+                console.log('”„ Canvas: Reloading widget definition for type:', entity.type);
+                
+                // Force refresh widget discovery
+                await window.widgetDiscoveryService.refreshWidgetDefinitions();
+                
+                // Get updated widget definition
+                const updatedDefinition = window.widgetDiscoveryService.getWidgetDefinition(entity.type);
+                
+                if (updatedDefinition) {
+                    // Update entity with new definition
+                    entity.metadata = updatedDefinition.metadata || entity.metadata;
+                    entity.metadataSchema = updatedDefinition.metadataSchema || entity.metadataSchema;
+                    entity.configuration = { ...updatedDefinition.configuration, ...entity.configuration };
+                    
+                    console.log('… Canvas: Widget definition updated for type:', entity.type);
+                } else {
+                    console.warn(' ¸ Canvas: No updated definition found for type:', entity.type);
+                }
             }
-
-            // Add to entities array
-            this.entities.push(duplicatedEntity);
             
-            // Re-render
+            // Clear loading state
+            entity.state.loading = false;
+            
+            // Force re-render the widget content
+            const widgetElement = this.shadowRoot.querySelector(`#entity-content-${entity.id} *`);
+            if (widgetElement && typeof widgetElement.render === 'function') {
+                widgetElement.render();
+                console.log('”„ Canvas: Widget content re-rendered');
+            }
+            
+            // Re-render the entire entity
             this.render();
             
             // Emit event for external components
-            this.dispatchEvent(new CustomEvent('entityAdded', {
+            this.dispatchEvent(new CustomEvent('entityRefreshed', {
                 detail: {
-                    entity: duplicatedEntity,
+                    entity: entity,
                     entities: this.entities
                 },
                 bubbles: true
             }));
             
-            console.log('✅ Canvas: Entity duplicated successfully');
+            console.log('… Canvas: Entity refreshed successfully');
             
         } catch (error) {
-            console.error('❌ Canvas: Failed to duplicate entity:', error);
+            console.error('âŒ Canvas: Failed to refresh entity:', error);
+            
+            // Clear loading state on error
+            if (entity.state) {
+                entity.state.loading = false;
+            }
+            this.render();
         }
     }
 
@@ -1133,7 +1245,7 @@ class DashboardCanvasEntity extends HTMLElement {
      * Edit entity (placeholder)
      */
     editEntity(entity) {
-        console.log('⚙️ Canvas: Edit entity:', entity.id);
+        console.log('™¸ Canvas: Edit entity:', entity.id);
         
         // Emit event for feeding panel to handle
         document.dispatchEvent(new CustomEvent('editWidget', {
@@ -1143,14 +1255,14 @@ class DashboardCanvasEntity extends HTMLElement {
             }
         }));
         
-        console.log('📡 Canvas: editWidget event dispatched for entity:', entity.id);
+        console.log('“¡ Canvas: editWidget event dispatched for entity:', entity.id);
     }
 
     /**
      * Clear all entities
      */
     async clearCanvas() {
-        console.log('🗑️ Canvas: Clearing all entities');
+        console.log('—‘¸ Canvas: Clearing all entities');
         
         try {
             if (this.widgetManager) {
@@ -1171,10 +1283,10 @@ class DashboardCanvasEntity extends HTMLElement {
             // Re-render
             this.render();
             
-            console.log('✅ Canvas: All entities cleared');
+            console.log('… Canvas: All entities cleared');
             
         } catch (error) {
-            console.error('❌ Canvas: Failed to clear entities:', error);
+            console.error('âŒ Canvas: Failed to clear entities:', error);
         }
     }
 
@@ -1182,7 +1294,7 @@ class DashboardCanvasEntity extends HTMLElement {
      * Update entity data binding
      */
     async updateEntityDataBinding(entityId, dataBinding) {
-        console.log('🔄 Canvas: Updating entity data binding:', entityId);
+        console.log('”„ Canvas: Updating entity data binding:', entityId);
         
         try {
             const entity = this.entities.find(e => e.id === entityId);
@@ -1190,24 +1302,24 @@ class DashboardCanvasEntity extends HTMLElement {
                 throw new Error(`Entity not found: ${entityId}`);
             }
             
-            // Mettre à jour le data binding de l'entité directement
+            // Mettre Ã  jour le data binding de l'entitÃ© directement
             entity.dataBinding = { ...entity.dataBinding, ...dataBinding };
             entity.dataBinding.lastApplied = new Date().toISOString();
             
-            // Mettre à jour les timestamps
+            // Mettre Ã  jour les timestamps
             entity.metadata.updated = new Date().toISOString();
             entity.state.isDirty = true;
             
-            console.log('✅ Canvas: Entity data binding updated:', entityId);
-            console.log('📊 Updated dataBinding:', entity.dataBinding);
+            console.log('… Canvas: Entity data binding updated:', entityId);
+            console.log('“Š Updated dataBinding:', entity.dataBinding);
             
             // Sauvegarder via le repository si disponible
             if (this.entityRepository) {
                 try {
                     await this.entityRepository.save(entity);
-                    console.log('💾 Canvas: Entity saved to repository');
+                    console.log('’¾ Canvas: Entity saved to repository');
                 } catch (error) {
-                    console.warn('⚠️ Canvas: Failed to save entity to repository:', error);
+                    console.warn(' ¸ Canvas: Failed to save entity to repository:', error);
                 }
             }
             
@@ -1219,10 +1331,10 @@ class DashboardCanvasEntity extends HTMLElement {
                 this.render();
             }
             
-            console.log('✅ Canvas: Entity data binding updated');
+            console.log('… Canvas: Entity data binding updated');
             
         } catch (error) {
-            console.error('❌ Canvas: Failed to update entity data binding:', error);
+            console.error('âŒ Canvas: Failed to update entity data binding:', error);
             throw error;
         }
     }
@@ -1266,3 +1378,14 @@ if (typeof module !== 'undefined' && module.exports) {
 } else if (typeof window !== 'undefined') {
     window.DashboardCanvasEntity = DashboardCanvasEntity;
 }
+
+
+
+
+
+
+
+
+
+
+
