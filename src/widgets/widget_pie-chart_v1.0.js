@@ -91,36 +91,9 @@ const pieChartRender = (function(args) {
 
     const style = document.createElement('style');
     style.textContent = `
-        .pie-chart-widget {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-        }
-        .widget-header {
-            padding: 16px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #eaecee;
-            flex-shrink: 0;
-        }
-        .widget-title {
-            margin: 0;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #1a2733;
-        }
-        .chart-container {
-            flex: 1;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
+        .pie-chart-widget { width:100%; height:100%; display:flex; flex-direction:column; background: var(--surface-primary,var(--background-secondary,#1A2733)); border-radius: var(--radius-md,8px); overflow:hidden; font-family: var(--font-family-base,'Segoe UI', Roboto, sans-serif); position:relative; padding: var(--spacing-md,16px); }
+        .pie-chart-widget:before { content:''; position:absolute; inset:0; background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,0)); pointer-events:none; }
+        .chart-container { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; }
         .chart-content {
             display: flex;
             align-items: center;
@@ -133,44 +106,25 @@ const pieChartRender = (function(args) {
         }
         .pie-slice {
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform .25s ease, filter .25s ease;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
         }
         .pie-slice:hover {
-            filter: brightness(1.1);
-            stroke-width: 3;
+            transform: scale(1.05);
+            filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0,0,0,.6));
         }
-        .legend {
-            flex: 1;
-            max-width: 150px;
-        }
+        .legend { flex:1; max-width:160px; display:flex; flex-direction:column; gap:6px; }
         .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 12px;
+            display:flex;
+            align-items:center;
+            font-size: 11px;
+            gap:6px;
         }
-        .legend-color {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-        .legend-label {
-            color: #1a2733;
-            font-weight: 500;
-        }
-        .legend-value {
-            color: #5b738b;
-            margin-left: auto;
-        }
+        .legend-color { width:14px; height:14px; border-radius:4px; flex-shrink:0; box-shadow:0 0 0 1px rgba(0,0,0,.4); }
+        .legend-label { color: var(--text-primary,#EAECEE); font-weight:500; }
+        .legend-value { color: var(--text-muted,#5B738B); margin-left:auto; font-size:10px; }
+        .chart-footer { position:absolute; top:8px; left:12px; font-size:11px; letter-spacing:.5px; text-transform:uppercase; font-weight:600; color: var(--text-secondary,#A9B4BE); pointer-events:none; }
         @media (max-width: 600px) {
-            .widget-header {
-                padding: 8px;
-            }
-            .chart-container {
-                padding: 8px;
-            }
             .chart-content {
                 flex-direction: column;
                 gap: 10px;
@@ -182,12 +136,9 @@ const pieChartRender = (function(args) {
         }
     `;
 
-    const header = document.createElement('div');
-    header.className = 'widget-header';
-    const title = document.createElement('h3');
-    title.className = 'widget-title';
-    title.textContent = 'Pie Chart';
-    header.appendChild(title);
+    const footerLabel = document.createElement('div');
+    footerLabel.className = 'chart-footer';
+    footerLabel.textContent = 'Pie Chart';
 
     const chartContainer = document.createElement('div');
     chartContainer.className = 'chart-container';
@@ -283,7 +234,7 @@ const pieChartRender = (function(args) {
 
     chartContainer.appendChild(chartContent);
     container.appendChild(style);
-    container.appendChild(header);
+    container.appendChild(footerLabel);
     container.appendChild(chartContainer);
 
     // return the HTML DOM element to be rendered

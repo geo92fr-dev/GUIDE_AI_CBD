@@ -67,92 +67,28 @@ const tableRender = (function(args) {
 
     const style = document.createElement('style');
     style.textContent = `
-        .table-widget {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-        }
-        .widget-header {
-            padding: 16px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #eaecee;
-            flex-shrink: 0;
-        }
-        .widget-title {
-            margin: 0;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #1a2733;
-        }
-        .table-container {
-            flex: 1;
-            overflow: auto;
-            padding: 16px;
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-        .data-table th {
-            background: #1B90FF;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #0066CC;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-        .data-table td {
-            padding: 8px;
-            border-bottom: 1px solid #eaecee;
-            color: #1a2733;
-        }
-        .data-table tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-        .data-table tr:hover {
-            background: #e3f2fd;
-        }
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #5b738b;
-        }
-        .no-data-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-        @media (max-width: 600px) {
-            .widget-header {
-                padding: 8px;
-            }
-            .table-container {
-                padding: 8px;
-            }
-            .data-table {
-                font-size: 0.8em;
-            }
-            .data-table th,
-            .data-table td {
-                padding: 6px 4px;
-            }
-        }
+        .table-widget { width:100%; height:100%; display:flex; flex-direction:column; background: var(--surface-primary,var(--background-secondary,#1A2733)); border-radius: var(--radius-md,8px); overflow:hidden; font-family: var(--font-family-base,'Segoe UI', Roboto, sans-serif); position:relative; }
+        .table-widget:before { content:''; position:absolute; inset:0; background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0)); pointer-events:none; }
+        .table-container { flex:1; overflow:auto; padding: var(--spacing-md,16px); }
+        .data-table { width:100%; border-collapse: collapse; font-size: 0.8rem; }
+        .data-table th { background: linear-gradient(90deg, var(--primary,#1B90FF), var(--primary-dark,#0070F2)); color:#fff; padding:10px 8px; text-align:left; font-weight:600; position:sticky; top:0; z-index:2; font-size:.75rem; letter-spacing:.5px; }
+        .data-table td { padding:8px 8px; border-bottom:1px solid rgba(255,255,255,0.08); color: var(--text-primary,#EAECEE); font-size:.75rem; }
+        .data-table tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+        .data-table tr:hover { background: rgba(255,255,255,0.06); }
+        .data-table tr:last-child td { border-bottom:none; }
+        .no-data { text-align:center; padding:40px; color: var(--text-muted,#5B738B); }
+        .no-data-icon { font-size:2.5rem; margin-bottom:10px; }
+        .table-footer-label { position:absolute; top:8px; left:12px; font-size:11px; letter-spacing:.5px; text-transform:uppercase; font-weight:600; color: var(--text-secondary,#A9B4BE); pointer-events:none; }
+        .table-container::-webkit-scrollbar { width:10px; height:10px; }
+        .table-container::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .table-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius:6px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+        @media (max-width: 600px) { .table-container { padding: var(--spacing-sm,8px);} .data-table { font-size:.7rem;} .data-table th,.data-table td { padding:6px 4px;} }
     `;
 
-    const header = document.createElement('div');
-    header.className = 'widget-header';
-    const title = document.createElement('h3');
-    title.className = 'widget-title';
-    title.textContent = 'Data Table';
-    header.appendChild(title);
+    const footerLabel = document.createElement('div');
+    footerLabel.className = 'table-footer-label';
+    footerLabel.textContent = 'Data Table';
 
     const tableContainer = document.createElement('div');
     tableContainer.className = 'table-container';
@@ -231,7 +167,7 @@ const tableRender = (function(args) {
     }
 
     container.appendChild(style);
-    container.appendChild(header);
+    container.appendChild(footerLabel);
     container.appendChild(tableContainer);
 
     // return the HTML DOM element to be rendered

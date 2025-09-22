@@ -105,86 +105,30 @@ const lineChartRender = (function(args) {
             height: 100%;
             display: flex;
             flex-direction: column;
-            background: #ffffff;
-            border-radius: 8px;
+            background: var(--surface-primary, var(--background-secondary,#1A2733));
+            border-radius: var(--radius-md,8px);
             overflow: hidden;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-family-base,'Segoe UI', Roboto, sans-serif);
+            position: relative;
+            padding: var(--spacing-md,16px);
         }
-        .widget-header {
-            padding: 16px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #eaecee;
-            flex-shrink: 0;
-        }
-        .widget-title {
-            margin: 0;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #1a2733;
-        }
-        .chart-container {
-            flex: 1;
-            padding: 16px;
-            overflow: hidden;
-        }
-        .chart-svg {
-            width: 100%;
-            height: 100%;
-            overflow: visible;
-        }
-        .line-path {
-            fill: none;
-            stroke: #1B90FF;
-            stroke-width: 3;
-            stroke-linejoin: round;
-            stroke-linecap: round;
-        }
-        .data-point {
-            fill: #1B90FF;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .data-point:hover {
-            fill: #0066CC;
-            r: 5;
-        }
-        .category-label {
-            font-size: 12px;
-            fill: #5b738b;
-        }
-        .value-label {
-            font-size: 11px;
-            fill: #1a2733;
-            font-weight: 600;
-        }
-        .grid-line {
-            stroke: #eaecee;
-            stroke-width: 1;
-            opacity: 0.5;
-        }
-        .grid-label {
-            font-size: 10px;
-            fill: #a9b4be;
-        }
-        @media (max-width: 600px) {
-            .widget-header {
-                padding: 8px;
-            }
-            .chart-container {
-                padding: 8px;
-            }
-            .category-label {
-                font-size: 10px;
-            }
-        }
+        .line-chart-widget:before { content:''; position:absolute; inset:0; background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,0)); pointer-events:none; }
+        .chart-container { flex:1; width:100%; height:100%; overflow:hidden; }
+        .chart-svg { width:100%; height:100%; overflow:visible; }
+        .line-path { fill:none; stroke: var(--primary, #1B90FF); stroke-width:2.2; stroke-linejoin:round; stroke-linecap:round; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
+        .data-point { fill: var(--primary,#1B90FF); cursor:pointer; transition: transform .2s ease, fill .2s; stroke: var(--background-secondary,#1A2733); stroke-width:0.6; }
+        .data-point:hover { transform: scale(1.15); fill: var(--primary-dark,#0070F2); }
+        .category-label { font-size:9px; fill: var(--text-muted,#5B738B); }
+        .value-label { font-size:9px; fill: var(--text-primary,#EAECEE); font-weight:600; paint-order: stroke; stroke: rgba(0,0,0,.4); stroke-width:.5; }
+        .grid-line { stroke: rgba(255,255,255,0.08); stroke-width:.4; }
+        .grid-label { font-size:7.5px; fill: var(--text-secondary,#A9B4BE); }
+        .chart-footer { position:absolute; top:8px; left:12px; font-size:11px; letter-spacing:.5px; text-transform:uppercase; font-weight:600; color: var(--text-secondary,#A9B4BE); pointer-events:none; }
+        @media (max-width:600px){ .line-chart-widget { padding: var(--spacing-sm,8px);} .value-label { font-size:8px;} .category-label{ font-size:8px;} }
     `;
 
-    const header = document.createElement('div');
-    header.className = 'widget-header';
-    const title = document.createElement('h3');
-    title.className = 'widget-title';
-    title.textContent = 'Line Chart';
-    header.appendChild(title);
+    const footerLabel = document.createElement('div');
+    footerLabel.className = 'chart-footer';
+    footerLabel.textContent = 'Line Chart';
 
     const chartContainer = document.createElement('div');
     chartContainer.className = 'chart-container';
@@ -278,7 +222,7 @@ const lineChartRender = (function(args) {
 
     chartContainer.appendChild(svg);
     container.appendChild(style);
-    container.appendChild(header);
+    container.appendChild(footerLabel);
     container.appendChild(chartContainer);
 
     // return the HTML DOM element to be rendered

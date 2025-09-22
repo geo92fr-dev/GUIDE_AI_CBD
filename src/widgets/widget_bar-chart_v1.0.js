@@ -100,26 +100,24 @@ const barChartRender = (function(args) {
             height: 100%;
             display: flex;
             flex-direction: column;
-            background: #ffffff;
-            border-radius: 8px;
+            background: var(--surface-primary, var(--background-secondary,#1A2733));
+            border-radius: var(--radius-md,8px);
             overflow: hidden;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-family-base, 'Segoe UI', Roboto, sans-serif);
+            position: relative;
+            padding: var(--spacing-md,16px);
         }
-        .widget-header {
-            padding: 16px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #eaecee;
-            flex-shrink: 0;
-        }
-        .widget-title {
-            margin: 0;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #1a2733;
+        .bar-chart-widget:before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
         }
         .chart-container {
             flex: 1;
-            padding: 16px;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
         }
         .chart-svg {
@@ -129,48 +127,57 @@ const barChartRender = (function(args) {
         }
         .bar {
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: opacity var(--transition-normal,0.2s) ease, transform var(--transition-normal,0.2s) ease;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25));
+            rx: 1;
         }
         .bar:hover {
-            filter: brightness(1.1);
+            opacity: .85;
+            transform: translateY(-0.5px);
         }
         .category-label {
-            font-size: 12px;
-            fill: #5b738b;
+            font-size: 10px;
+            fill: var(--text-muted,#5B738B);
         }
         .value-label {
-            font-size: 11px;
-            fill: #1a2733;
+            font-size: 10px;
+            fill: var(--text-primary,#EAECEE);
             font-weight: 600;
+            paint-order: stroke;
+            stroke: rgba(0,0,0,0.35);
+            stroke-width: .6;
+            stroke-linejoin: round;
         }
         .grid-line {
-            stroke: #eaecee;
-            stroke-width: 1;
-            opacity: 0.5;
+            stroke: rgba(255,255,255,0.08);
+            stroke-width: 0.4;
         }
         .grid-label {
-            font-size: 10px;
-            fill: #a9b4be;
+            font-size: 8px;
+            fill: var(--text-secondary,#A9B4BE);
+        }
+        .chart-footer {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 11px;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary,#A9B4BE);
+            pointer-events: none;
         }
         @media (max-width: 600px) {
-            .widget-header {
-                padding: 8px;
-            }
-            .chart-container {
-                padding: 8px;
-            }
-            .category-label {
-                font-size: 10px;
-            }
+            .bar-chart-widget { padding: var(--spacing-sm,8px); }
+            .value-label { font-size: 9px; }
+            .category-label { font-size: 9px; }
         }
     `;
 
-    const header = document.createElement('div');
-    header.className = 'widget-header';
-    const title = document.createElement('h3');
-    title.className = 'widget-title';
-    title.textContent = options.title || 'Bar Chart';
-    header.appendChild(title);
+    // Decorative inline label instead of bulky header
+    const footerLabel = document.createElement('div');
+    footerLabel.className = 'chart-footer';
+    footerLabel.textContent = (options.title || 'Bar Chart').replace('📊 ','');
 
     const chartContainer = document.createElement('div');
     chartContainer.className = 'chart-container';
@@ -253,7 +260,7 @@ const barChartRender = (function(args) {
 
     chartContainer.appendChild(svg);
     container.appendChild(style);
-    container.appendChild(header);
+    container.appendChild(footerLabel);
     container.appendChild(chartContainer);
 
     // return the HTML DOM element to be rendered
