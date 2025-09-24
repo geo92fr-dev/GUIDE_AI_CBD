@@ -28,6 +28,8 @@
             padding: 20px;
             margin: 10px 0;
             min-height: 300px;
+            width: 1200px; /* 🔧 Largeur fixe pour permettre l'affichage de 7 barres */
+            overflow-x: auto; /* Scroll horizontal si nécessaire */
         }
         .controls {
             margin: 10px 0;
@@ -160,13 +162,15 @@
                 // Initialiser avec l'entité
                 barChartWidget.initializeWithEntity(barChartEntity);
                 
-                // Ajouter des données de test
+                // Ajouter des données de test avec contraste élevé sur value2
                 const testData = [
-                    { label: 'Nord', value: 25000 },
-                    { label: 'Sud', value: 18000 },
-                    { label: 'Est', value: 32000 },
-                    { label: 'Ouest', value: 21000 },
-                    { label: 'Centre', value: 28000 }
+                    { label: 'Nord', value: 25000, value2: 850 },
+                    { label: 'Sud', value: 18000, value2: 1200 },
+                    { label: 'Est', value: 32000, value2: 650 },
+                    { label: 'Ouest', value: 21000, value2: 950 },
+                    { label: 'Centre', value: 28000, value2: 1100 },
+                    { label: 'Pacifique', value: 19500, value2: 750 },
+                    { label: 'Atlantique', value: 26500, value2: 880 }
                 ];
                 
                 barChartWidget.updateData(testData);
@@ -191,13 +195,15 @@
                     throw new Error('Aucune instance de widget créée');
                 }
                 
-                // Nouvelles données aléatoires
+                // Nouvelles données aléatoires avec contraste élevé
                 const newData = [
-                    { label: 'Nord', value: Math.floor(Math.random() * 40000) + 10000 },
-                    { label: 'Sud', value: Math.floor(Math.random() * 40000) + 10000 },
-                    { label: 'Est', value: Math.floor(Math.random() * 40000) + 10000 },
-                    { label: 'Ouest', value: Math.floor(Math.random() * 40000) + 10000 },
-                    { label: 'Centre', value: Math.floor(Math.random() * 40000) + 10000 }
+                    { label: 'Nord', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 },
+                    { label: 'Sud', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 },
+                    { label: 'Est', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 },
+                    { label: 'Ouest', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 },
+                    { label: 'Centre', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 },
+                    { label: 'Pacifique', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 },
+                    { label: 'Atlantique', value: Math.floor(Math.random() * 40000) + 10000, value2: Math.floor(Math.random() * 600) + 500 }
                 ];
                 
                 barChartWidget.updateData(newData);

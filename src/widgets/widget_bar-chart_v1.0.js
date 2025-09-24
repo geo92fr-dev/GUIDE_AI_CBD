@@ -36,15 +36,16 @@ const BAR_CHART_DEMO_DATASET = {
         description: 'Dataset de démonstration pour les ventes par région',
         source: 'internal-demo',
         lastUpdated: new Date().toISOString(),
-        rowCount: 6
+        rowCount: 7
     },
     data: [
-        { label: 'North', value: 45000, category: 'Region' },
-        { label: 'South', value: 38000, category: 'Region' },
-        { label: 'East', value: 52000, category: 'Region' },
-        { label: 'West', value: 41000, category: 'Region' },
-        { label: 'Central', value: 47000, category: 'Region' },
-        { label: 'International', value: 29000, category: 'Region' }
+        { label: 'Nord', value: 25000, value2: 850, category: 'Region' },
+        { label: 'Sud', value: 18000, value2: 1200, category: 'Region' },
+        { label: 'Est', value: 32000, value2: 650, category: 'Region' },
+        { label: 'Ouest', value: 21000, value2: 950, category: 'Region' },
+        { label: 'Centre', value: 28000, value2: 1100, category: 'Region' },
+        { label: 'Pacifique', value: 19500, value2: 750, category: 'Region' },
+        { label: 'Atlantique', value: 26500, value2: 880, category: 'Region' }
     ]
 };
 
@@ -71,12 +72,13 @@ const BAR_CHART_WIDGET_DEFINITION = {
     demoDataset: BAR_CHART_DEMO_DATASET,
     metadataSchema: [
         { name: 'label', type: 'string', semantic: 'dimension', description: 'Category label' },
-        { name: 'value', type: 'number', semantic: 'measure', description: 'Value for the bar' }
+        { name: 'value', type: 'number', semantic: 'measure', description: 'Primary measure (bar height)' },
+        { name: 'value2', type: 'number', semantic: 'measure', description: 'Secondary measure (bar width when enabled)' }
     ],
     dataBinding: {
         requirements: {
             dimensions: { min: 1, max: 2, required: true },
-            measures: { min: 1, max: 3, required: true },
+            measures: { min: 1, max: 2, required: true },
             filters: { min: 0, max: 10, required: false }
         },
         defaultBinding: {
@@ -115,10 +117,50 @@ const barChartRender = (function(args) {
     const rawData = Array.isArray(args.json) ? args.json : [];
     const title = (args.title || '📊 Raphael Bar Chart 1').replace('📊 ','');
     const options = args.options || {};
-
-    // Fallback dataset si vide ou invalide
-    const data = (rawData && rawData.length > 0 ? rawData : BAR_CHART_DEMO_DATASET.data)
-        .filter(d => typeof d.value === 'number' && !isNaN(d.value));
+    
+    // Configuration des noms business pour les mesures
+    const measureLabels = {
+        value: options.measure1Label || 'Sales Revenue',
+        value2: options.measure2Label || 'Market Volume'
+    };
+    
+    // Toutes les mesures disponibles incluant "none" (aucune mesure de largeur)
+    const availableMeasures = ['value', 'value2', ''];
+    
+    // ✅ DÉCLARATION DES DONNÉES D'ABORD
+    let data = (rawData && rawData.length > 0 ? rawData : BAR_CHART_DEMO_DATASET.data);
+    
+    // Configuration du mode variwide (largeurs variables) - Auto-détection
+    const baseHeightMeasure = options.heightMeasure || 'value';
+    
+    // 🎯 CONFIGURATION : Par défaut width = "None", l'utilisateur choisit manuellement
+    const defaultWidthMeasure = ''; // Toujours "None" par défaut
+    
+    const baseWidthMeasure = options.widthMeasure !== undefined ? options.widthMeasure : defaultWidthMeasure;
+    const varidConfig = {
+        enabled: baseWidthMeasure !== '', // Activé si width measure sélectionnée
+        heightMeasure: baseHeightMeasure, // Mesure pour la hauteur
+        widthMeasure: baseWidthMeasure, // Mesure pour la largeur (auto-détecté ou spécifié)
+        minBarWidth: options.minBarWidth || 20,
+        maxBarWidth: options.maxBarWidth || 300,
+        labels: measureLabels
+    };
+    
+    // Filtrage et validation des mesures selon la configuration
+    data = data.filter(d => {
+        const heightValue = d[varidConfig.heightMeasure];
+        const widthValue = varidConfig.enabled ? d[varidConfig.widthMeasure] : null;
+        
+        // Valider la mesure de hauteur (obligatoire)
+        if (typeof heightValue !== 'number' || isNaN(heightValue)) return false;
+        
+        // Si variwide activé, valider aussi la mesure de largeur
+        if (varidConfig.enabled && (typeof widthValue !== 'number' || isNaN(widthValue) || widthValue <= 0)) {
+            return false;
+        }
+        
+        return true;
+    });
 
     const container = document.createElement('div');
     container.className = 'bc-root bc-ultra'; // activation mode ultra compact
@@ -135,7 +177,7 @@ const barChartRender = (function(args) {
             .bc-root:before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(145deg,rgba(255,255,255,0.04),rgba(255,255,255,0)); }
             .bc-header { display:flex; flex-direction:column; align-items:stretch; gap:0; padding:0; margin:0; margin-bottom:0; }
             .bc-title-row { text-align:center; line-height:1.0; margin:0; }
-            .bc-title { display:inline-block; font-size:var(--bc-font-size); font-weight:600; letter-spacing:.5px; text-transform:uppercase; color: var(--text-secondary,#A9B4BE); margin:0; }
+            .bc-title { display:block; text-align:center; font-size:var(--bc-font-size); font-weight:600; letter-spacing:.5px; text-transform:uppercase; color: var(--text-secondary,#A9B4BE); margin:0 auto; width:100%; }
             .bc-legend-row { margin:-2px 0 0 0; padding:0; display:flex; justify-content:center; }
             .bc-legend { display:flex; flex-wrap:wrap; gap:2px 6px; align-items:center; justify-content:center; max-width:100%; }
             /* Large variant when peu de catégories (<=6) */
@@ -151,18 +193,26 @@ const barChartRender = (function(args) {
             .bc-legend-color { width:14px; height:14px; border-radius:4px; box-shadow:0 0 0 1px rgba(255,255,255,0.25) inset; }
             .bc-legend-pct { font-weight:600; font-size:var(--bc-font-size); color: var(--text-secondary,#A9B4BE); }
             /* Section diff dédiée sous le chart */
-            .bc-diff-section { padding:2px 4px; margin-top:0; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:3px; min-height:16px; display:flex; align-items:center; justify-content:center; text-align:center; flex-shrink:0; }
-            .bc-diff-default { font-size:var(--bc-font-size); color: var(--text-secondary,#A9B4BE); font-style:italic; }
+            .bc-diff-section { padding:2px 4px; margin-top:0; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:3px; height:20px; min-height:20px; max-height:20px; display:flex; align-items:center; justify-content:center; text-align:center; flex-shrink:0; overflow:hidden; white-space:nowrap; }
+            .bc-diff-default { font-size:var(--bc-font-size); color: var(--text-secondary,#A9B4BE); font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
             .bc-diff-content { width:100%; text-align:center; }
             .bc-diff-header-inline { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
             .bc-diff-header-inline span { font-weight:600; font-size:var(--bc-font-size); letter-spacing:.3px; color: var(--text-primary,#EAECEE); }
             .bc-diff-swap { background:none; border:none; font-size:var(--bc-font-size); color:var(--text-secondary,#A9B4BE); cursor:pointer; padding:0 4px; border-radius:4px; }
             .bc-diff-swap:hover { background:rgba(255,255,255,0.1); color:var(--text-primary,#EAECEE); }
-            .bc-diff-inline { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
+            .bc-diff-inline { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:nowrap; white-space:nowrap; overflow:hidden; }
             .bc-diff-labels { font-size:var(--bc-font-size); font-weight:600; color: var(--text-primary,#EAECEE); }
             .bc-diff-values { font-size:var(--bc-font-size); color:var(--text-secondary,#A9B4BE); }
             .bc-diff-delta { font-size:var(--bc-font-size); font-weight:600; }
             .bc-diff-separator { font-size:var(--bc-font-size); color:var(--text-secondary,#A9B4BE); opacity:0.6; }
+            
+            /* Contrôles Variwide */
+            .bc-variwide-controls { display:flex; align-items:center; justify-content:center; gap:8px; margin:2px 0; padding:2px 4px; background:rgba(255,255,255,0.03); border-radius:6px; }
+            .bc-variwide-toggle { background:none; border:1px solid rgba(255,255,255,0.2); color:var(--text-secondary,#A9B4BE); font-size:var(--bc-font-size); padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.2s; }
+            .bc-variwide-toggle:hover { border-color:rgba(255,255,255,0.4); background:rgba(255,255,255,0.05); }
+            .bc-variwide-toggle.active { border-color:var(--accent-primary,#4A9EFF); background:var(--accent-primary,#4A9EFF); color:#ffffff; }
+            .bc-variwide-label { font-size:var(--bc-font-size); color:var(--text-muted,#5B738B); font-weight:500; }
+            .bc-measure-selector { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:var(--text-secondary,#A9B4BE); font-size:var(--bc-font-size); padding:1px 4px; border-radius:3px; cursor:pointer; min-width:60px; }
     .bc-chart-wrapper { position:relative; flex:1; overflow:hidden; border-top:none; margin:0; padding:0; }
       .bc-scroll { width:100%; height:100%; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; }
       .bc-scroll::-webkit-scrollbar { height:8px; }
@@ -175,7 +225,7 @@ const barChartRender = (function(args) {
       .bc-cat-label { font-size:var(--bc-font-size); fill: var(--text-muted,#5B738B); dominant-baseline: hanging; }
       .bc-cat-rot45 { transform-origin: center; }
       .bc-value-label { font-size:var(--bc-font-size); font-weight:600; fill: var(--text-primary,#EAECEE); paint-order: stroke; stroke: rgba(0,0,0,0.45); stroke-width:.8; stroke-linejoin:round; }
-    .bc-bar { rx:1.5; cursor:pointer; transition:filter .18s ease, opacity .18s ease; }
+    .bc-bar { rx:1.5; cursor:pointer; transition:filter .18s ease, opacity .18s ease, width .4s ease, x .4s ease; }
     .bc-bar:focus-visible { outline:2px solid rgba(255,255,255,0.8); outline-offset:2px; }
     .bc-bars.hover-mode .bc-bar { opacity:0.25; }
     .bc-bars.hover-mode .bc-bar.hovered { opacity:1; filter:brightness(1.08); }
@@ -213,7 +263,7 @@ const barChartRender = (function(args) {
             .bc-ultra .bc-legend.bc-legend-large .bc-legend-item { font-size:var(--bc-font-size); padding:2px 6px; }
             .bc-ultra .bc-legend-color { width:10px; height:10px; border-radius:3px; }
             .bc-ultra .bc-legend-pct { font-size:var(--bc-font-size); }
-            .bc-ultra .bc-diff-section { margin-top:0; padding:1px 3px; min-height:14px; }
+            .bc-ultra .bc-diff-section { margin-top:0; padding:1px 3px; height:18px; min-height:18px; max-height:18px; }
             .bc-ultra .bc-diff-default { font-size:var(--bc-font-size); }
             .bc-ultra .bc-diff-inline { gap:4px; }
             .bc-ultra .bc-diff-labels, .bc-ultra .bc-diff-values, .bc-ultra .bc-diff-delta { font-size:var(--bc-font-size); }
@@ -338,6 +388,102 @@ const barChartRender = (function(args) {
     titleEl.textContent=title;
     header.appendChild(titleEl);
     
+    // Contrôles des mesures (interface simplifiée)
+    const measureControlsEl = document.createElement('div');
+    measureControlsEl.className = 'bc-variwide-controls';
+    measureControlsEl.style.display = 'flex';
+    measureControlsEl.style.alignItems = 'center';
+    measureControlsEl.style.gap = '8px';
+    
+    // Initialisation des sélecteurs avec filtrage
+    header.appendChild(measureControlsEl);
+    
+    // Fonction pour générer les options de sélecteurs avec filtrage mutuel
+    function generateSelectorOptions(currentType, currentValue, excludedValue = null) {
+        const isHeight = currentType === 'height';
+        let options = '';
+        
+        if (isHeight) {
+            // Height selector : uniquement les vraies mesures (pas "")
+            availableMeasures.filter(m => m !== '').forEach(measure => {
+                if (measure !== excludedValue) {
+                    const selected = measure === currentValue ? 'selected' : '';
+                    const label = measureLabels[measure];
+                    options += `<option value="${measure}" ${selected}>${label}</option>`;
+                }
+            });
+        } else {
+            // Width selector : None + les autres mesures non sélectionnées en Height
+            // Toujours inclure "None" (valeur vide)
+            const noneSelected = currentValue === '' ? 'selected' : '';
+            options += `<option value="" ${noneSelected}>None</option>`;
+            
+            // Ajouter les mesures non utilisées par Height
+            availableMeasures.filter(m => m !== '' && m !== excludedValue).forEach(measure => {
+                const selected = measure === currentValue ? 'selected' : '';
+                const label = measureLabels[measure];
+                options += `<option value="${measure}" ${selected}>${label}</option>`;
+            });
+        }
+        
+        return options;
+    }
+    
+    // Function pour mettre à jour les sélecteurs avec filtrage
+    function updateSelectors() {
+        const heightOptions = generateSelectorOptions('height', varidConfig.heightMeasure, varidConfig.widthMeasure);
+        const widthOptions = generateSelectorOptions('width', varidConfig.widthMeasure, varidConfig.heightMeasure);
+        
+        measureControlsEl.innerHTML = `
+            <span class="bc-variwide-label">Height:</span>
+            <select class="bc-measure-selector bc-height-measure">
+                ${heightOptions}
+            </select>
+            <span class="bc-variwide-label">Width:</span>
+            <select class="bc-measure-selector bc-width-measure">
+                ${widthOptions}
+            </select>
+        `;
+        
+        // Re-attacher les gestionnaires d'événements
+        const heightMeasureSelect = measureControlsEl.querySelector('.bc-height-measure');
+        const widthMeasureSelect = measureControlsEl.querySelector('.bc-width-measure');
+        
+        heightMeasureSelect?.addEventListener('change', (e) => {
+            varidConfig.heightMeasure = e.target.value;
+            console.log('📊 HEIGHT MEASURE CHANGE:', varidConfig.heightMeasure);
+            updateSelectors(); // Mettre à jour les sélecteurs
+            reRenderChart();
+        });
+        
+        widthMeasureSelect?.addEventListener('change', (e) => {
+            varidConfig.widthMeasure = e.target.value;
+            varidConfig.enabled = e.target.value !== '';
+            console.log('📊 WIDTH MEASURE CHANGE:', {
+                width: varidConfig.widthMeasure,
+                enabled: varidConfig.enabled
+            });
+            updateSelectors(); // Mettre à jour les sélecteurs
+            reRenderChart();
+        });
+    }
+    
+    // Gestionnaires d'événements pour les sélecteurs de mesures
+    const reRenderChart = () => {
+        // Re-rendu complet du widget avec nouvelles options
+        const newOptions = {
+            ...options,
+            heightMeasure: varidConfig.heightMeasure,
+            widthMeasure: varidConfig.widthMeasure
+        };
+        const newArgs = { ...args, options: newOptions };
+        const newWidget = barChartRender(newArgs);
+        container.parentNode?.replaceChild(newWidget, container);
+    };
+    
+    // Initialisation initiale des sélecteurs avec filtrage
+    updateSelectors();
+    
     // 🔍 DEBUG - Mesurer header réel après ajout
     setTimeout(() => {
         const actualHeaderHeight = header.getBoundingClientRect().height;
@@ -351,12 +497,12 @@ const barChartRender = (function(args) {
         } else if(data.length>6){
             legendEl.classList.add('bc-legend-compact');
         }
-        const total = data.reduce((a,b)=>a+b.value,0) || 1;
-        const sortedLegend = [...data].sort((a,b)=>b.value-a.value);
+        const total = data.reduce((a,b)=>a+(b[varidConfig.heightMeasure] || 0),0) || 1;
+        const sortedLegend = [...data].sort((a,b)=>b[varidConfig.heightMeasure]-a[varidConfig.heightMeasure]);
         sortedLegend.forEach((d,i)=>{
             const item = document.createElement('div'); item.className='bc-legend-item'; item.setAttribute('tabindex','0');
             const sw = document.createElement('div'); sw.className='bc-legend-color'; sw.style.background=colorForIndex(data.indexOf(d));
-            const pct = (d.value/total)*100; const pctSpan=document.createElement('span'); pctSpan.className='bc-legend-pct'; pctSpan.textContent = (pct<3?pct.toFixed(1):pct.toFixed(0)).replace(/\.0$/,'')+'%';
+            const pct = (d[varidConfig.heightMeasure]/total)*100; const pctSpan=document.createElement('span'); pctSpan.className='bc-legend-pct'; pctSpan.textContent = (pct<3?pct.toFixed(1):pct.toFixed(0)).replace(/\.0$/,'')+'%';
             const labelSpan=document.createElement('span'); labelSpan.textContent = truncateLabel(d.label,18);
             item.appendChild(sw); item.appendChild(labelSpan); item.appendChild(pctSpan); legendEl.appendChild(item);
         });
@@ -373,7 +519,7 @@ const barChartRender = (function(args) {
     // Section diff dédiée sous le chart
     const diffSection = document.createElement('div'); 
     diffSection.className = 'bc-diff-section';
-    diffSection.innerHTML = '<div class="bc-diff-default">Sélectionnez 2 barres pour voir la différence</div>';
+    diffSection.innerHTML = '<div class="bc-diff-default">Sélectionnez 2 barres pour comparaison</div>';
     container.appendChild(diffSection);
 
     // 🔍 DEBUG - Mesurer sections réelles après render complet
@@ -400,7 +546,9 @@ const barChartRender = (function(args) {
     // Gestion dataset vide ou toutes valeurs 0
     if(data.length===0){
         const empty = document.createElement('div'); empty.className='bc-empty'; empty.innerHTML = 'No data<br><span>Provide feeding input</span>'; container.appendChild(style); return container; }
-    const maxValueRaw = Math.max(...data.map(d=>d.value));
+    // Utiliser la mesure de hauteur configurée pour les calculs d'échelle
+    const heightValues = data.map(d => d[varidConfig.heightMeasure] || 0);
+    const maxValueRaw = Math.max(...heightValues);
     const allZero = maxValueRaw === 0;
     if(allZero){
         const empty = document.createElement('div'); empty.className='bc-empty'; empty.innerHTML = 'All values are zero<br><span>Awaiting new data</span>'; container.appendChild(style); container.appendChild(empty); return container; }
@@ -541,16 +689,92 @@ const barChartRender = (function(args) {
     const plotWidth = Math.max(10, width - leftMargin - rightMargin);
     const plotHeight = Math.max(10, height - topMargin - bottomMargin);
 
-    // Recalcul barNominal selon plotWidth final
-    barNominal = (plotWidth / data.length) * 0.7;
-    const barWidth = Math.min(Math.max(barNominal, dense?4:6), 48);
-    const totalBarsWidth = barWidth * data.length;
-    let gap = (plotWidth - totalBarsWidth) / (data.length + 1);
-    if (gap < 2) gap = 2;
+    // Calcul des largeurs de barres selon le mode (normal ou variwide)
+    let barWidths = []; // Array pour stocker la largeur de chaque barre
+    let totalBarsWidth = 0;
+    let gap = 2; // Gap minimal entre barres
+    
+    console.log('🚀 BAR WIDTH CALCULATION START:', {
+        variwidEnabled: varidConfig.enabled,
+        heightMeasure: varidConfig.heightMeasure,
+        widthMeasure: varidConfig.widthMeasure,
+        dataLength: data.length
+    });
+    
+    if (varidConfig.enabled) {
+        // Mode Variwide : largeurs proportionnelles à la mesure de largeur
+        const widthValues = data.map(d => d[varidConfig.widthMeasure] || 0);
+        const totalWidthValue = widthValues.reduce((a, b) => a + b, 0);
+        
+        // ✨ LARGEUR CONSTANTE : Utiliser toute la largeur disponible (moins les gaps)
+        const totalGapWidth = gap * (data.length + 1);
+        const availableWidthForBars = plotWidth - totalGapWidth;
+        
+        console.log('📊 VARIWIDE MODE - Width calculation (constant total):', {
+            enabled: varidConfig.enabled,
+            widthMeasure: varidConfig.widthMeasure,
+            plotWidth,
+            totalGapWidth,
+            availableWidthForBars,
+            widthValues,
+            totalWidthValue,
+            minBarWidth: varidConfig.minBarWidth,
+            maxBarWidth: varidConfig.maxBarWidth
+        });
+        
+        if (totalWidthValue > 0) {
+            // Calculer les largeurs proportionnelles utilisant TOUTE la largeur disponible
+            const rawBarWidths = widthValues.map((value, index) => {
+                const proportionalWidth = (value / totalWidthValue) * availableWidthForBars;
+                return Math.max(varidConfig.minBarWidth, Math.min(proportionalWidth, varidConfig.maxBarWidth));
+            });
+            
+            // ✨ REDISTRIBUTION pour maintenir largeur constante
+            const currentTotal = rawBarWidths.reduce((a, b) => a + b, 0);
+            const scaleFactor = availableWidthForBars / currentTotal;
+            
+            barWidths = rawBarWidths.map((width, index) => {
+                const scaledWidth = width * scaleFactor;
+                console.log(`📐 Bar ${index} width calc (constant total):`, {
+                    widthValue: widthValues[index],
+                    proportional: ((widthValues[index] / totalWidthValue) * availableWidthForBars).toFixed(2),
+                    raw: width.toFixed(2),
+                    scaled: scaledWidth.toFixed(2),
+                    scaleFactor: scaleFactor.toFixed(3)
+                });
+                return scaledWidth;
+            });
+        } else {
+            // Fallback si toutes les valeurs de largeur sont 0
+            const noneWidth = availableWidthForBars / data.length;
+            barWidths = new Array(data.length).fill(noneWidth);
+        }
+        
+        totalBarsWidth = barWidths.reduce((a, b) => a + b, 0);
+        
+        console.log('📊 VARIWIDE RESULT - Final bar widths (constant total):', {
+            barWidths: barWidths.map(w => w.toFixed(2)),
+            totalBarsWidth: totalBarsWidth.toFixed(2),
+            expectedTotal: availableWidthForBars.toFixed(2),
+            totalWidthWithGaps: (totalBarsWidth + totalGapWidth).toFixed(2),
+            plotWidth: plotWidth.toFixed(2)
+        });
+        
+    } else {
+        // Mode normal : largeurs égales (None)
+        barNominal = (plotWidth / data.length) * 0.7;
+        const barWidth = Math.min(Math.max(barNominal, dense?4:6), 48);
+        barWidths = new Array(data.length).fill(barWidth);
+        totalBarsWidth = barWidth * data.length;
+        gap = (plotWidth - totalBarsWidth) / (data.length + 1);
+        if (gap < 2) gap = 2;
+    }
+    
     // Virtual width si overflow
     let virtualWidth = plotWidth;
-    if (totalBarsWidth + gap*(data.length+1) > plotWidth){
-        virtualWidth = totalBarsWidth + gap*(data.length+1);
+    const totalUsedWidth = totalBarsWidth + gap * (data.length + 1);
+    if (totalUsedWidth > plotWidth) {
+        virtualWidth = totalUsedWidth;
     }
 
     // Axes & ticks avec headroom minimal
@@ -620,36 +844,74 @@ const barChartRender = (function(args) {
     axisLineX.setAttribute('y2', baseY);
     axisXG.appendChild(axisLineX);
 
-    // Pré-calcul ranking (desc) pour tooltip optionnel
+    // Pré-calcul ranking (desc) pour tooltip optionnel - Utiliser la mesure de hauteur
     const rankMap = new Map();
-    [...data].sort((a,b)=>b.value-a.value).forEach((d,i)=>{ if(!rankMap.has(d.label)) rankMap.set(d.label,i+1); });
+    [...data].sort((a,b)=>(b[varidConfig.heightMeasure] || 0)-(a[varidConfig.heightMeasure] || 0)).forEach((d,i)=>{ if(!rankMap.has(d.label)) rankMap.set(d.label,i+1); });
 
-    // Bars
-    const total = data.reduce((a,b)=>a+b.value,0) || 1;
+    // Bars avec support variwide
+    const total = data.reduce((a,b)=>a+(b[varidConfig.heightMeasure] || 0),0) || 1;
     let maxBarHeight = 0;
+    let currentX = leftMargin + gap; // Position X courante
+    
+    // VERIFICATION: S'assurer que barWidths est bien défini
+    console.log('🔍 CHECK barWidths array:', {
+        barWidthsLength: barWidths?.length,
+        dataLength: data.length,
+        barWidthsArray: barWidths
+    });
+    
     data.forEach((d,i)=>{
-        const x = leftMargin + gap + i*(barWidth + gap);
-        const h = (d.value / yMax) * plotHeight;
+        const barWidth = barWidths[i]; // Largeur spécifique à cette barre
+        
+        // SECURITE: Vérifier que barWidth n'est pas undefined
+        if (barWidth === undefined || isNaN(barWidth)) {
+            console.error(`❌ ERREUR: barWidth[${i}] est undefined ou NaN:`, barWidth);
+        }
+        const heightValue = d[varidConfig.heightMeasure] || 0;
+        const widthValue = varidConfig.enabled ? (d[varidConfig.widthMeasure] || 0) : heightValue;
+        
+        // DEBUG: Tracer les largeurs pour chaque barre
+        console.log(`📊 Bar ${i} (${d.label}):`, {
+            barWidth,
+            heightValue,
+            widthValue,
+            variwidEnabled: varidConfig.enabled,
+            heightMeasure: varidConfig.heightMeasure,
+            widthMeasure: varidConfig.widthMeasure
+        });
+        
+        const h = (heightValue / yMax) * plotHeight;
         const y = topMargin + plotHeight - h;
         
         // Track tallest bar
         if (h > maxBarHeight) {
             maxBarHeight = h;
-            console.log('🔍 Tallest bar so far:', d.label, 'height:', h, 'value:', d.value, 'y-position:', y);
+            console.log('🔍 Tallest bar so far:', d.label, 'height:', h, 'heightValue:', heightValue, 'widthValue:', widthValue, 'y-position:', y);
         }
+        
         const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-        rect.setAttribute('x', x);
+        rect.setAttribute('x', currentX);
         rect.setAttribute('y', y);
         rect.setAttribute('width', barWidth);
         rect.setAttribute('height', h);
+        
+        // LOG: Vérifier que la largeur est bien appliquée au SVG
+        console.log(`🎯 SVG Bar ${i} (${d.label}) - Applied width: ${barWidth}px at x: ${currentX}px`);
         rect.setAttribute('fill', colorForIndex(i));
         rect.setAttribute('class','bc-bar');
         rect.setAttribute('tabindex','0');
         rect.dataset.label = d.label;
-        rect.dataset.value = String(d.value);
-    rect.dataset.pct = ((d.value/total)*100).toFixed(2);
-    rect.dataset.rank = rankMap.get(d.label);
+        rect.dataset.value = String(heightValue); // Valeur de hauteur
+        rect.dataset.value2 = String(widthValue); // Valeur de largeur
+        rect.dataset.pct = ((heightValue/total)*100).toFixed(2);
+        rect.dataset.rank = rankMap.get(d.label);
         barsG.appendChild(rect);
+        
+        // ✅ CORRECTION : Calculer le centre AVANT de mettre à jour currentX
+        const barCenterX = currentX + barWidth/2;
+        
+        // Mettre à jour la position X pour la prochaine barre
+        currentX += barWidth + gap;
 
         // Category label (si pas dense)
         if(!dense){
@@ -657,16 +919,17 @@ const barChartRender = (function(args) {
             const fullLabel = d.label || '';
             const truncated = truncateLabel(fullLabel, rotate70?10:(rotate45?12:14));
             cat.textContent = truncated;
-            cat.setAttribute('x', x + barWidth/2);
+            const labelX = barCenterX; // ✅ Utiliser le centre calculé correctement
+            cat.setAttribute('x', barCenterX);
             const catLabelYOffset = ultra ? -1 : (dense ? 0 : 1); // déplacement vers le haut en ultra
             cat.setAttribute('y', baseY + catLabelYOffset);
             cat.setAttribute('text-anchor','middle');
             cat.setAttribute('class','bc-cat-label');
             if (truncated !== fullLabel) cat.setAttribute('title', fullLabel);
             if (rotate70){
-                cat.setAttribute('transform',`rotate(70 ${x + barWidth/2} ${baseY + catLabelYOffset})`);
+                cat.setAttribute('transform',`rotate(70 ${barCenterX} ${baseY + catLabelYOffset})`);
             } else if (rotate45){
-                cat.setAttribute('transform',`rotate(45 ${x + barWidth/2} ${baseY + catLabelYOffset})`);
+                cat.setAttribute('transform',`rotate(45 ${barCenterX} ${baseY + catLabelYOffset})`);
             }
             axisXG.appendChild(cat);
         }
@@ -675,10 +938,10 @@ const barChartRender = (function(args) {
         if(!dense){
             const inner = h >= 14; const above = !inner && h >= 8; if(inner || above){
                 const vt = document.createElementNS('http://www.w3.org/2000/svg','text');
-                vt.setAttribute('x', x + barWidth/2);
+                vt.setAttribute('x', barCenterX); // ✅ Utiliser barCenterX calculé correctement
                 vt.setAttribute('text-anchor','middle');
                 vt.setAttribute('class','bc-value-label');
-                vt.textContent = formatValue(d.value);
+                vt.textContent = formatValue(heightValue);
                 vt.setAttribute('y', inner ? (y + 12) : (y - 2));
                 if(inner) vt.style.fill = '#FFFFFF';
                 valuesG.appendChild(vt);
@@ -729,16 +992,14 @@ const barChartRender = (function(args) {
         const trendColor = diff>=0 ? 'var(--positive-trend,#36A41D)' : 'var(--negative-trend,#EE3939)';
         const sign = diff>=0 ? '+' : '';
         return `<div class="bc-diff-content">
-                    <div class="bc-diff-header-inline">
+                    <div class="bc-diff-inline">
                         <span>Comparaison</span>
                         <button class="bc-diff-swap" title="Inverser la comparaison">⇄</button>
-                    </div>
-                    <div class="bc-diff-inline">
-                        <span class="bc-diff-labels">${a.label} → ${b.label}</span>
+                        <span>${a.label} → ${b.label}</span>
                         <span class="bc-diff-separator">•</span>
-                        <span class="bc-diff-values">${formatValue(a.value)} → ${formatValue(b.value)}</span>
+                        <span>${formatValue(a.value)} → ${formatValue(b.value)}</span>
                         <span class="bc-diff-separator">•</span>
-                        <span class="bc-diff-delta" style="color:${trendColor};">${sign}${formatValue(diff)} (${sign}${pct.toFixed(1).replace(/\.0$/,'')}%)</span>
+                        <span style="color:${trendColor};">${sign}${formatValue(diff)} (${sign}${pct.toFixed(1).replace(/\.0$/,'')}%)</span>
                     </div>
                 </div>`;
     }
@@ -746,7 +1007,7 @@ const barChartRender = (function(args) {
         if(selection.length===0){
             diffPath.classList.remove('visible');
             diffPath.style.display='none'; 
-            diffSection.innerHTML = '<div class="bc-diff-default">Sélectionnez 2 barres pour voir la différence</div>';
+            diffSection.innerHTML = '<div class="bc-diff-default">Sélectionnez 2 barres pour comparaison</div>';
             return;
         }
         
@@ -760,8 +1021,9 @@ const barChartRender = (function(args) {
             const pct = Number(selected.dataset.pct);
             const rank = Number(selected.dataset.rank);
             diffSection.innerHTML = `<div class="bc-diff-content">
-                <div style="font-size:${BC_FONT_SIZE}px; font-weight:600; color:var(--text-primary,#EAECEE); margin-bottom:4px;">Sélection: ${label}</div>
                 <div class="bc-diff-inline">
+                    <span style="font-weight:600; color:var(--text-primary,#EAECEE);">Sélection: ${label}</span>
+                    <span class="bc-diff-separator">•</span>
                     <span class="bc-diff-values">Valeur: ${formatValue(value)}</span>
                     <span class="bc-diff-separator">•</span>
                     <span class="bc-diff-values">Part: ${pct.toFixed(1).replace(/\.0$/,'')}%</span>
@@ -839,14 +1101,33 @@ const barChartRender = (function(args) {
     function showTip(evt, target){
         const label = target.dataset.label || '';
         const value = Number(target.dataset.value||0);
+        const value2 = Number(target.dataset.value2||0);
         const pct = Number(target.dataset.pct||0);
         const rank = Number(target.dataset.rank||0);
         const pctTxt = pct.toFixed(pct<3?1:0).replace(/\.0$/,'');
+        
         let baseHtml;
-        if(tooltipCfg.variant==='minimal'){
-            baseHtml = `${tooltipCfg.showRank?`<span class="bc-rank">#${rank}</span>`:''}${label}: ${formatValue(value)} (${pctTxt}%)`;
+        if(varidConfig.enabled) {
+            // Mode variwide : afficher les deux mesures avec noms business
+            const heightLabel = varidConfig.labels[varidConfig.heightMeasure];
+            const widthLabel = varidConfig.labels[varidConfig.widthMeasure];
+            const heightValue = varidConfig.heightMeasure === 'value' ? value : value2;
+            const widthValue = varidConfig.widthMeasure === 'value' ? value : value2;
+            
+            if(tooltipCfg.variant==='minimal'){
+                baseHtml = `${tooltipCfg.showRank?`<span class="bc-rank">#${rank}</span>`:''}${label}<br>📏 ${heightValue}<br>📐 ${widthValue}`;
+            } else {
+                baseHtml = `${tooltipCfg.showRank?`<span class="bc-rank">#${rank}</span>`:''}<strong>${label}</strong>
+                    <div class="bc-line"><strong>📏 ${heightLabel}:</strong> ${formatValue(heightValue)} (${pctTxt}%)</div>
+                    <div class="bc-line"><strong>📐 ${widthLabel}:</strong> ${formatValue(widthValue)}</div>`;
+            }
         } else {
-            baseHtml = `${tooltipCfg.showRank?`<span class="bc-rank">#${rank}</span>`:''}<strong>${label}</strong><div class="bc-line">${formatValue(value)} (${pctTxt}%)</div>`;
+            // Mode normal : afficher uniquement la mesure principale
+            if(tooltipCfg.variant==='minimal'){
+                baseHtml = `${tooltipCfg.showRank?`<span class="bc-rank">#${rank}</span>`:''}${label}: ${formatValue(value)} (${pctTxt}%)`;
+            } else {
+                baseHtml = `${tooltipCfg.showRank?`<span class="bc-rank">#${rank}</span>`:''}<strong>${label}</strong><div class="bc-line">${formatValue(value)} (${pctTxt}%)</div>`;
+            }
         }
         tooltip.innerHTML = baseHtml;
         tooltip.hidden=false; tooltip.classList.add('fade-in');
@@ -963,6 +1244,15 @@ class BarChartWidgetUnified extends HTMLElement {
             isDemo: this.isDemo,
             dataSource: this.isDemo ? 'demo-dataset' : 'external-feeding'
         };
+    }
+
+    // ================================================================
+    // 🔄 COMPATIBILITY - Alias pour updateData
+    // ================================================================
+    
+    updateData(data) {
+        console.log('📊 BAR CHART: updateData called (forwarding to setFeedingData):', data);
+        this.setFeedingData(data);
     }
 
     // ================================================================
